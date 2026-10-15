@@ -9,7 +9,7 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Pretendard:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Pretendard:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
   <!-- Three.js and OrbitControls -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -22,7 +22,7 @@
       --primary: #ff5722;
       --primary-hover: #f4511e;
       --accent: #ffb300;
-      --bg-dark: rgba(18, 22, 34, 0.85);
+      --bg-dark: rgba(18, 22, 34, 0.88);
       --border-glass: rgba(255, 255, 255, 0.18);
       --text: #ffffff;
       --font-display: 'Jua', sans-serif;
@@ -69,11 +69,42 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 16px;
+      padding: 14px 16px;
+      transition: opacity 0.3s ease;
+    }
+
+    .ui-layer.ui-hidden {
+      opacity: 0;
+      pointer-events: none !important;
     }
 
     .interactive {
       pointer-events: auto;
+    }
+
+    /* Floating button to restore UI */
+    .show-ui-pill {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 50;
+      background: var(--bg-dark);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-glass);
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: 14px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      display: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      transition: all 0.2s;
+    }
+    .show-ui-pill:hover {
+      background: rgba(40, 50, 75, 0.95);
+      transform: scale(1.05);
     }
 
     /* Glassmorphism Common */
@@ -82,7 +113,7 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid var(--border-glass);
-      border-radius: 20px;
+      border-radius: 18px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
     }
 
@@ -92,55 +123,127 @@
       justify-content: space-between;
       align-items: flex-start;
       gap: 12px;
+      width: 100%;
     }
 
     .zoo-badge {
-      padding: 12px 20px;
+      padding: 10px 16px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .zoo-badge-icon {
+      font-size: 28px;
     }
 
     .zoo-title {
       font-family: var(--font-display);
-      font-size: 24px;
+      font-size: 20px;
       line-height: 1.1;
       color: #fff;
       text-shadow: 0 2px 4px rgba(0,0,0,0.4);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+    }
+
+    #skin-badge {
+      font-size: 12px;
+      background: rgba(255,255,255,0.2);
+      padding: 2px 8px;
+      border-radius: 8px;
+      color: #ffd54f;
     }
 
     .zoo-subtitle {
-      font-size: 12px;
+      font-size: 11px;
       color: #ffd54f;
       font-weight: 600;
       letter-spacing: 0.5px;
     }
 
-    /* Stats Panel */
+    /* Stats Panel (Collapsible) */
     .tiger-stats {
-      padding: 12px 18px;
+      padding: 10px 16px;
       display: flex;
       flex-direction: column;
+      min-width: 280px;
+      max-width: 380px;
+      transition: all 0.25s ease;
+    }
+
+    .stats-summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       gap: 8px;
-      min-width: 250px;
+      width: 100%;
+    }
+
+    .summary-chips {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .chip.weight-chip b { color: #ffca28; }
+    .chip.score-chip b { color: #4dd0e1; }
+    .chip.victim-chip b { color: #ff5252; }
+
+    .stats-toggle-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .stats-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .stats-detail-body {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    }
+
+    .tiger-stats.collapsed .stats-detail-body {
+      display: none;
+      margin-top: 0;
     }
 
     .stat-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
     }
 
     .stat-bar-container {
       width: 100%;
-      height: 10px;
+      height: 8px;
       background: rgba(255, 255, 255, 0.15);
-      border-radius: 10px;
+      border-radius: 8px;
       overflow: hidden;
       margin-top: 2px;
       position: relative;
@@ -150,7 +253,7 @@
       height: 100%;
       width: 20%;
       background: linear-gradient(90deg, #ff9800, #ff3d00);
-      border-radius: 10px;
+      border-radius: 8px;
       transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
@@ -161,23 +264,24 @@
     .victim-counter {
       color: #ff5252;
       font-family: var(--font-display);
-      font-size: 15px;
+      font-size: 14px;
     }
 
     /* Action Toolbar (Top-Right Buttons) */
     .top-actions {
       display: flex;
-      gap: 8px;
+      gap: 6px;
+      flex-shrink: 0;
     }
 
     .icon-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
+      font-size: 18px;
       background: var(--bg-dark);
       border: 1px solid var(--border-glass);
       color: #fff;
@@ -203,7 +307,7 @@
       left: 50%;
       transform: translate(-50%, -50%);
       font-family: var(--font-display);
-      font-size: 38px;
+      font-size: 34px;
       color: #fff;
       text-shadow: 0 4px 12px rgba(0, 0, 0, 0.7), 0 0 20px #ff9800;
       pointer-events: none;
@@ -215,28 +319,40 @@
 
     .center-notice.show {
       opacity: 1;
-      transform: translate(-50%, -50%) scale(1.15);
+      transform: translate(-50%, -50%) scale(1.12);
     }
 
     /* Instruction / Hint Overlay */
     .hint-banner {
       align-self: center;
-      padding: 8px 18px;
-      font-size: 13px;
+      padding: 6px 14px;
+      font-size: 12px;
       font-weight: 700;
       color: #fff;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.6);
       border-radius: 30px;
       border: 1px solid rgba(255, 255, 255, 0.2);
       display: flex;
       align-items: center;
       gap: 8px;
-      animation: pulseHint 2s infinite ease-in-out;
+      animation: pulseHint 2.5s infinite ease-in-out;
+    }
+
+    .hint-close-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+    .hint-close-btn:hover {
+      color: #fff;
     }
 
     @keyframes pulseHint {
       0%, 100% { opacity: 0.85; transform: translateY(0); }
-      50% { opacity: 1; transform: translateY(-3px); }
+      50% { opacity: 1; transform: translateY(-2px); }
     }
 
     /* Bottom Food Selector Tray */
@@ -244,16 +360,16 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 12px;
-      padding-bottom: 8px;
+      gap: 8px;
+      padding-bottom: 4px;
     }
 
     .food-dock {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      border-radius: 28px;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 24px;
       background: rgba(14, 18, 28, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.2);
       max-width: 95vw;
@@ -267,30 +383,31 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 74px;
-      height: 80px;
-      border-radius: 18px;
+      width: 66px;
+      height: 72px;
+      border-radius: 16px;
       background: rgba(255, 255, 255, 0.08);
       border: 2px solid transparent;
       cursor: pointer;
       transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
       position: relative;
+      flex-shrink: 0;
     }
 
     .food-slot:hover {
       background: rgba(255, 255, 255, 0.16);
-      transform: translateY(-4px);
+      transform: translateY(-3px);
     }
 
     .food-slot.active {
       background: linear-gradient(135deg, rgba(255, 87, 34, 0.35), rgba(255, 179, 0, 0.25));
       border-color: #ff9800;
-      box-shadow: 0 0 16px rgba(255, 152, 0, 0.6);
-      transform: translateY(-6px) scale(1.06);
+      box-shadow: 0 0 14px rgba(255, 152, 0, 0.6);
+      transform: translateY(-4px) scale(1.05);
     }
 
     .food-icon {
-      font-size: 32px;
+      font-size: 28px;
       filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
       transition: transform 0.2s ease;
     }
@@ -301,8 +418,8 @@
 
     .food-name {
       font-family: var(--font-display);
-      font-size: 12px;
-      margin-top: 4px;
+      font-size: 11px;
+      margin-top: 2px;
       color: #fff;
     }
 
@@ -312,10 +429,10 @@
       right: -4px;
       background: #ff1744;
       color: #fff;
-      font-size: 9px;
+      font-size: 8px;
       font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 10px;
+      padding: 1px 5px;
+      border-radius: 8px;
       border: 1px solid rgba(255, 255, 255, 0.8);
       letter-spacing: -0.5px;
     }
@@ -333,16 +450,16 @@
     /* Camera Switch Bar */
     .cam-controls {
       display: flex;
-      gap: 6px;
+      gap: 4px;
       background: rgba(0, 0, 0, 0.4);
-      padding: 4px;
-      border-radius: 20px;
+      padding: 3px;
+      border-radius: 16px;
       border: 1px solid rgba(255, 255, 255, 0.15);
     }
 
     .cam-btn {
-      padding: 6px 14px;
-      border-radius: 16px;
+      padding: 5px 12px;
+      border-radius: 12px;
       border: none;
       background: transparent;
       color: #ddd;
@@ -383,8 +500,8 @@
     .modal-content {
       background: #171c28;
       border: 2px solid var(--border-glass);
-      border-radius: 24px;
-      padding: 28px;
+      border-radius: 22px;
+      padding: 24px;
       max-width: 440px;
       width: 90%;
       color: #fff;
@@ -400,7 +517,7 @@
 
     .modal-title {
       font-family: var(--font-display);
-      font-size: 26px;
+      font-size: 24px;
       color: #ffb300;
       margin-bottom: 12px;
       display: flex;
@@ -410,15 +527,15 @@
     }
 
     .modal-body {
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1.6;
       color: #cfd8dc;
       text-align: left;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     .modal-body p {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .modal-body ul {
@@ -430,9 +547,9 @@
       background: linear-gradient(135deg, #ff5722, #ff9800);
       color: #fff;
       font-family: var(--font-display);
-      font-size: 18px;
+      font-size: 16px;
       border: none;
-      padding: 12px 32px;
+      padding: 10px 28px;
       border-radius: 30px;
       cursor: pointer;
       box-shadow: 0 6px 20px rgba(255, 87, 34, 0.4);
@@ -449,7 +566,7 @@
       position: absolute;
       pointer-events: none;
       font-family: var(--font-display);
-      font-size: 22px;
+      font-size: 20px;
       color: #fff;
       text-shadow: 0 2px 8px rgba(0,0,0,0.8), 0 0 10px #ff3d00;
       animation: floatUpFade 1.2s forwards cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -464,7 +581,7 @@
       }
       20% {
         opacity: 1;
-        transform: translate(-50%, -20px) scale(1.2) rotate(3deg);
+        transform: translate(-50%, -20px) scale(1.15) rotate(3deg);
       }
       100% {
         opacity: 0;
@@ -472,31 +589,127 @@
       }
     }
 
-    /* Mobile adjustments */
-    @media (max-width: 640px) {
-      .header-bar {
-        flex-direction: column;
-        align-items: stretch;
+    /* Mobile Responsive Optimizations (Screens <= 768px) */
+    @media (max-width: 768px) {
+      .ui-layer {
+        padding: 8px 10px;
       }
-      .top-actions {
-        align-self: flex-end;
+      
+      .header-bar {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto;
+        gap: 6px;
+        width: 100%;
+      }
+
+      .zoo-badge {
+        grid-column: 1;
+        grid-row: 1;
+        padding: 6px 10px;
+        border-radius: 14px;
+        gap: 6px;
+      }
+      .zoo-badge-icon {
+        font-size: 22px !important;
       }
       .zoo-title {
-        font-size: 20px;
+        font-size: 15px;
       }
+      .zoo-subtitle {
+        display: none; /* Hide subtitle to keep phone screen clean */
+      }
+      #skin-badge {
+        font-size: 11px;
+        padding: 1px 5px;
+      }
+
+      .top-actions {
+        grid-column: 2;
+        grid-row: 1;
+        gap: 4px;
+        justify-self: end;
+      }
+      .icon-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        font-size: 16px;
+      }
+
       .tiger-stats {
-        min-width: 100%;
-        padding: 8px 14px;
+        grid-column: 1 / -1;
+        grid-row: 2;
+        min-width: unset;
+        width: 100%;
+        padding: 6px 10px;
+        border-radius: 14px;
+      }
+      .summary-chips {
+        gap: 4px;
+      }
+      .chip {
+        font-size: 11px;
+        padding: 2px 6px;
+      }
+
+      .bottom-section {
+        gap: 6px;
+        padding-bottom: 4px;
+        width: 100%;
+      }
+
+      .hint-banner {
+        font-size: 11px;
+        padding: 4px 10px;
+        max-width: 95vw;
+        text-align: center;
+      }
+
+      .cam-controls {
+        gap: 3px;
+        padding: 3px;
+        border-radius: 14px;
+      }
+      .cam-btn {
+        font-size: 10px;
+        padding: 4px 8px;
+        border-radius: 10px;
+      }
+
+      .food-dock {
+        gap: 6px;
+        padding: 6px 8px;
+        border-radius: 18px;
+        width: 100%;
+        max-width: 100vw;
+        justify-content: center;
       }
       .food-slot {
-        width: 64px;
-        height: 72px;
+        width: 54px;
+        height: 60px;
+        border-radius: 12px;
+        flex-shrink: 0;
       }
       .food-icon {
-        font-size: 26px;
+        font-size: 20px;
       }
       .food-name {
-        font-size: 11px;
+        font-size: 10px;
+        margin-top: 2px;
+      }
+      .food-badge {
+        font-size: 8px;
+        padding: 1px 4px;
+        top: -3px;
+        right: -3px;
+      }
+
+      .center-notice {
+        font-size: 26px;
+      }
+      .comic-pop {
+        font-size: 16px;
       }
     }
   </style>
@@ -506,42 +719,60 @@
   <!-- WebGL 3D Canvas Container -->
   <div id="webgl-container"></div>
 
+  <!-- Floating Show UI Button (Visible when UI is hidden) -->
+  <button class="show-ui-pill interactive" id="btn-show-ui">👁️ UI 켜기</button>
+
   <!-- UI HUD Layer -->
-  <div class="ui-layer">
+  <div class="ui-layer" id="ui-layer">
     <!-- Top Header -->
     <div class="header-bar">
       <!-- Title & Tiger Bio -->
       <div class="zoo-badge glass-card interactive">
-        <span style="font-size: 32px;">🐯</span>
+        <span class="zoo-badge-icon">🐯</span>
         <div>
-          <div class="zoo-title">국립 설호 동물원 <span id="skin-badge" style="font-size: 14px; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 8px;">백호</span></div>
+          <div class="zoo-title">국립 설호 동물원 <span id="skin-badge">백호</span></div>
           <div class="zoo-subtitle">SEOLHO TIGER ZOO • 3D 관람장</div>
         </div>
       </div>
 
-      <!-- Live Stats & Weight -->
-      <div class="tiger-stats glass-card interactive">
-        <div class="stat-row">
-          <span>몸무게</span>
-          <span style="color: #ffca28;" id="tiger-weight">215.0 kg</span>
+      <!-- Live Stats & Weight (Collapsible) -->
+      <div class="tiger-stats glass-card interactive" id="tiger-stats">
+        <div class="stats-summary" id="stats-summary">
+          <div class="summary-chips">
+            <span class="chip weight-chip">🐯 <b id="mini-weight">215.0kg</b></span>
+            <span class="chip score-chip">🏆 <b id="mini-score">0점</b></span>
+            <span class="chip victim-chip">😱 <b id="mini-victim">0명</b></span>
+          </div>
+          <button class="stats-toggle-btn" id="btn-toggle-stats" title="상태창 접기/펼치기">상태 ▾</button>
         </div>
-        <div class="stat-row">
-          <span>포만감</span>
-          <span id="fullness-pct">35%</span>
-        </div>
-        <div class="stat-bar-container">
-          <div class="stat-bar-fill" id="fullness-bar" style="width: 35%;"></div>
-        </div>
-        <div class="stat-row" style="margin-top: 4px;">
-          <span>기분 (행복도)</span>
-          <span id="happiness-pct">80%</span>
-        </div>
-        <div class="stat-bar-container">
-          <div class="stat-bar-fill happiness" id="happiness-bar" style="width: 80%;"></div>
-        </div>
-        <div class="stat-row" style="margin-top: 2px;">
-          <span>희생된 관객 수</span>
-          <span class="victim-counter" id="victim-count">0명 😱</span>
+
+        <div class="stats-detail-body" id="stats-detail-body">
+          <div class="stat-row">
+            <span>몸무게</span>
+            <span style="color: #ffca28;" id="tiger-weight">215.0 kg</span>
+          </div>
+          <div class="stat-row">
+            <span>총 점수</span>
+            <span style="color: #4dd0e1;" id="tiger-score">0 점</span>
+          </div>
+          <div class="stat-row">
+            <span>포만감</span>
+            <span id="fullness-pct">35%</span>
+          </div>
+          <div class="stat-bar-container">
+            <div class="stat-bar-fill" id="fullness-bar" style="width: 35%;"></div>
+          </div>
+          <div class="stat-row" style="margin-top: 4px;">
+            <span>기분 (행복도)</span>
+            <span id="happiness-pct">80%</span>
+          </div>
+          <div class="stat-bar-container">
+            <div class="stat-bar-fill happiness" id="happiness-bar" style="width: 80%;"></div>
+          </div>
+          <div class="stat-row" style="margin-top: 2px;">
+            <span>희생된 관객 수</span>
+            <span class="victim-counter" id="victim-count">0명 😱</span>
+          </div>
         </div>
       </div>
 
@@ -549,6 +780,7 @@
       <div class="top-actions interactive">
         <button class="icon-btn" id="btn-skin" title="호랑이 털 변경 (백호 / 황호)">🐅</button>
         <button class="icon-btn" id="btn-refill" title="관람객 보충하기">👥</button>
+        <button class="icon-btn" id="btn-hide-ui" title="UI 숨기기 (몰입 모드)">👁️</button>
         <button class="icon-btn" id="btn-audio" title="소리 켜기/끄기">🔊</button>
         <button class="icon-btn" id="btn-daynight" title="낮/밤 모드 전환">☀️</button>
         <button class="icon-btn" id="btn-help" title="게임 설명">❓</button>
@@ -562,15 +794,16 @@
     <div class="bottom-section">
       <!-- Hint -->
       <div class="hint-banner interactive" id="hint-text">
-        <span>💡 화면이나 우리 안을 터치하면 먹이를 투척합니다! 관객을 눌러도 던질 수 있어요!</span>
+        <span>💡 화면 터치로 먹이 투척! 관객을 터치하면 날아갑니다!</span>
+        <button class="hint-close-btn" id="btn-close-hint" title="닫기">✕</button>
       </div>
 
       <!-- Camera Selector -->
       <div class="cam-controls interactive">
-        <button class="cam-btn active" data-cam="free">🎥 자유 시점</button>
-        <button class="cam-btn" data-cam="deck">👀 관람객 시점</button>
-        <button class="cam-btn" data-cam="front">🐯 설호 정면</button>
-        <button class="cam-btn" data-cam="top">☁️ 하늘 시점</button>
+        <button class="cam-btn active" data-cam="free">🎥 자유</button>
+        <button class="cam-btn" data-cam="deck">👀 관람객</button>
+        <button class="cam-btn" data-cam="front">🐯 설호</button>
+        <button class="cam-btn" data-cam="top">☁️ 하늘</button>
       </div>
 
       <!-- Food & Yeet Dock -->
@@ -592,7 +825,7 @@
         </div>
         <div class="food-slot" data-type="visitor">
           <span class="food-icon">😱</span>
-          <span class="food-name">관객 던지기</span>
+          <span class="food-name">관객 투척</span>
           <span class="food-badge yeet">초특급</span>
         </div>
         <div class="food-slot" data-type="pig">
@@ -609,15 +842,15 @@
     <div class="modal-content">
       <div class="modal-title">🐯 설호 먹이주기 3D 안내서</div>
       <div class="modal-body">
-        <p><strong>반갑습니다! 국립 설호 동물원에 오신 것을 환영합니다!</strong></p>
+        <p><strong>국립 설호 동물원에 오신 것을 환영합니다!</strong></p>
         <ul>
-          <li>🥩 <strong>먹이 투척:</strong> 화면의 바닥이나 설호를 클릭하면 맛있는 먹이가 날아갑니다.</li>
-          <li>😱 <strong>관객 던지기:</strong> 난간에 서 있는 귀여운 관객을 클릭하거나, 하단 [관객 던지기]를 선택하고 던지면 비명을 지르며 사육장 안으로 날아갑니다!</li>
-          <li>🐯 <strong>설호의 식성:</strong> 설호는 날아오는 먹이를 눈으로 쫓고, 펄쩍 뛰어올라 공중에서 가로채 먹습니다!</li>
-          <li>⚖️ <strong>몸무게 & 피버:</strong> 먹이를 많이 먹이면 설호가 점점 커지고 거대해집니다. 연속 콤보로 피버 타임을 즐겨보세요!</li>
-          <li>🎥 <strong>자유로운 카메라:</strong> 화면을 드래그하여 360도 회전 및 확대/축소할 수 있습니다.</li>
+          <li>🥩 <strong>먹이 투척:</strong> 화면 바닥이나 설호를 클릭하면 맛있는 먹이가 날아갑니다.</li>
+          <li>😱 <strong>관객 던지기:</strong> 난간에 서 있는 관객을 직접 클릭하거나, 하단 [관객 투척]을 누르고 화면을 누르면 관객이 비명을 지르며 사육장으로 날아갑니다!</li>
+          <li>🐯 <strong>설호의 반응:</strong> 날아오는 먹이를 눈으로 쫓고, 펄쩍 뛰어올라 공중에서 낚아챕니다!</li>
+          <li>📱 <strong>UI 접기/숨기기:</strong> 상태창의 [상태 ▾] 버튼으로 세부 정보를 접을 수 있으며, 상단의 👁️ 버튼으로 모든 UI를 숨겨 시원하게 관람할 수 있습니다.</li>
+          <li>🎥 <strong>카메라 조작:</strong> 드래그로 360도 회전 및 핀치 줌이 가능합니다.</li>
         </ul>
-        <p style="color: #ff9800; font-size: 13px;">친구들에게 링크를 공유해서 누가 더 많은 관객(?)을 먹였는지 겨뤄보세요!</p>
+        <p style="color: #ff9800; font-size: 13px;">친구들에게 링크를 공유해서 누가 더 높은 점수를 얻는지 겨뤄보세요!</p>
       </div>
       <button class="modal-btn" id="modal-close-btn">사육장 구경하러 가기!</button>
     </div>
@@ -626,7 +859,7 @@
   <!-- Main Game Logic Script -->
   <script>
     /* =========================================================================
-       1. SYNTHESIZED WEB AUDIO ENGINE (Zero external dependencies / 100% reliable)
+       1. SYNTHESIZED WEB AUDIO ENGINE
        ========================================================================= */
     class SoundEngine {
       constructor() {
@@ -670,7 +903,6 @@
         this.init();
         if (!this.ctx) return;
 
-        // Comical descending human-like shriek / whistle
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
@@ -679,7 +911,6 @@
         osc.frequency.setValueAtTime(startFreq, now);
         osc.frequency.exponentialRampToValueAtTime(320, now + 0.65);
 
-        // Filter to soften the harsh sawtooth into a cartoon voice
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'bandpass';
         filter.frequency.setValueAtTime(1200, now);
@@ -704,7 +935,6 @@
 
         const now = this.ctx.currentTime;
         
-        // Deep body crunch
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
@@ -718,7 +948,6 @@
         osc.start(now);
         osc.stop(now + 0.17);
 
-        // Noise burst for teeth snap
         const bufferSize = this.ctx.sampleRate * 0.08;
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -746,7 +975,6 @@
         if (!this.ctx) return;
 
         const now = this.ctx.currentTime;
-        // Deep modulated tiger growl
         const osc = this.ctx.createOscillator();
         const lfo = this.ctx.createOscillator();
         const lfoGain = this.ctx.createGain();
@@ -757,7 +985,7 @@
         osc.frequency.exponentialRampToValueAtTime(75, now + 0.8);
 
         lfo.type = 'sine';
-        lfo.frequency.setValueAtTime(18, now); // vibrato growl
+        lfo.frequency.setValueAtTime(18, now);
         lfoGain.gain.setValueAtTime(25, now);
 
         lfo.connect(lfoGain);
@@ -785,7 +1013,7 @@
         this.init();
         if (!this.ctx) return;
 
-        const notes = [261.63, 329.63, 392.00, 523.25]; // C E G C
+        const notes = [261.63, 329.63, 392.00, 523.25];
         notes.forEach((freq, idx) => {
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
@@ -814,7 +1042,6 @@
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
 
-        // Base Coat
         const baseColor = isWhiteTiger ? '#F5F5F7' : '#F58220';
         const underbelly = '#FFFFFF';
 
@@ -825,7 +1052,6 @@
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 512, 512);
 
-        // Stripes
         ctx.fillStyle = isWhiteTiger ? '#252936' : '#1A1817';
         for (let i = 30; i < 500; i += 38) {
           ctx.beginPath();
@@ -841,7 +1067,6 @@
           ctx.lineCap = 'round';
           ctx.stroke();
 
-          // Sub branches
           if (Math.random() > 0.4) {
             ctx.beginPath();
             ctx.moveTo(i, 220);
@@ -863,18 +1088,16 @@
         canvas.height = 256;
         const ctx = canvas.getContext('2d');
 
-        // Fur
         ctx.fillStyle = isWhiteTiger ? '#F8F9FA' : '#F58220';
         ctx.fillRect(0, 0, 256, 256);
 
-        // Forehead '王' (King) stripe mark famous for tigers
+        // '王' (King) stripe mark on tiger forehead
         ctx.fillStyle = isWhiteTiger ? '#252936' : '#1A1817';
         ctx.fillRect(70, 40, 116, 12);
         ctx.fillRect(85, 75, 86, 12);
         ctx.fillRect(120, 40, 16, 75);
         ctx.fillRect(60, 110, 136, 14);
 
-        // Whisker dots
         ctx.fillStyle = isWhiteTiger ? '#555' : '#333';
         const dots = [
           [80, 180], [95, 185], [85, 195],
@@ -902,18 +1125,17 @@
         this.targetScale = 1.0;
         this.currentScale = 1.0;
 
-        // Animation state variables
-        this.state = 'idle'; // 'idle', 'notice', 'pounce', 'chomp', 'happy'
+        this.state = 'idle';
         this.targetFood = null;
         this.mouthOpenAngle = 0;
         this.walkCycle = 0;
         this.blinkTimer = 0;
         this.lookAtPos = new THREE.Vector3(0, 3, 5);
+        this._activeJump = null;
 
         this.initMaterials();
         this.buildBody();
         this.scene.add(this.group);
-
         this.group.position.set(0, 0, 0);
       }
 
@@ -921,21 +1143,13 @@
         this.furTexture = TextureGenerator.createTigerFurTexture(this.isWhite);
         this.faceTexture = TextureGenerator.createTigerFaceTexture(this.isWhite);
 
-        this.furMat = new THREE.MeshLambertMaterial({
-          map: this.furTexture,
-          roughness: 0.8
-        });
-
-        this.faceMat = new THREE.MeshLambertMaterial({
-          map: this.faceTexture,
-          roughness: 0.8
-        });
-
+        this.furMat = new THREE.MeshLambertMaterial({ map: this.furTexture, roughness: 0.8 });
+        this.faceMat = new THREE.MeshLambertMaterial({ map: this.faceTexture, roughness: 0.8 });
         this.whiteMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
         this.pinkMat = new THREE.MeshLambertMaterial({ color: 0xff8fa3 });
         this.noseMat = new THREE.MeshLambertMaterial({ color: 0xeb6b80 });
         this.blackMat = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
-        this.goldEyeMat = new THREE.MeshLambertMaterial({ color: 0x4dd0e1, emissive: 0x006064, emissiveIntensity: 0.3 }); // Icy blue eyes for white tiger
+        this.goldEyeMat = new THREE.MeshLambertMaterial({ color: 0x4dd0e1, emissive: 0x006064, emissiveIntensity: 0.3 });
         if (!this.isWhite) {
           this.goldEyeMat.color.setHex(0xffb300);
           this.goldEyeMat.emissive.setHex(0xbf360c);
@@ -961,11 +1175,9 @@
       }
 
       buildBody() {
-        // Main Root & Torso
         this.torso = new THREE.Group();
         this.group.add(this.torso);
 
-        // Body Mesh (Chubby, powerful stylized tiger body)
         const bodyGeo = new THREE.BoxGeometry(2.4, 2.0, 3.8);
         this.bodyMesh = new THREE.Mesh(bodyGeo, this.furMat);
         this.bodyMesh.position.y = 2.1;
@@ -973,28 +1185,22 @@
         this.bodyMesh.receiveShadow = true;
         this.torso.add(this.bodyMesh);
 
-        // White Belly Patch
         const bellyGeo = new THREE.BoxGeometry(2.0, 0.4, 3.2);
         const bellyMesh = new THREE.Mesh(bellyGeo, this.whiteMat);
         bellyMesh.position.set(0, -0.9, 0);
         this.bodyMesh.add(bellyMesh);
 
-        // Head Group (Rotates and looks at food!)
         this.headGroup = new THREE.Group();
         this.headGroup.position.set(0, 2.7, 2.2);
         this.torso.add(this.headGroup);
 
-        // Skull
         const skullGeo = new THREE.BoxGeometry(2.2, 1.9, 2.0);
         this.skullMesh = new THREE.Mesh(skullGeo, this.faceMat);
         this.skullMesh.position.z = 0.5;
         this.skullMesh.castShadow = true;
         this.headGroup.add(this.skullMesh);
 
-        // Cute Tiger Ears
         const earGeo = new THREE.BoxGeometry(0.5, 0.6, 0.25);
-        
-        // Left Ear
         this.leftEar = new THREE.Group();
         this.leftEar.position.set(0.9, 1.1, 0.3);
         const leftEarOuter = new THREE.Mesh(earGeo, this.furMat);
@@ -1004,7 +1210,6 @@
         this.leftEar.rotation.z = -0.3;
         this.headGroup.add(this.leftEar);
 
-        // Right Ear
         this.rightEar = new THREE.Group();
         this.rightEar.position.set(-0.9, 1.1, 0.3);
         const rightEarOuter = new THREE.Mesh(earGeo, this.furMat);
@@ -1014,23 +1219,17 @@
         this.rightEar.rotation.z = 0.3;
         this.headGroup.add(this.rightEar);
 
-        // Snout / Muzzle Upper
-        const snoutGeo = new THREE.BoxGeometry(1.3, 0.8, 1.1);
-        const snoutMesh = new THREE.Mesh(snoutGeo, this.whiteMat);
+        const snoutMesh = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.8, 1.1), this.whiteMat);
         snoutMesh.position.set(0, -0.2, 1.6);
         this.headGroup.add(snoutMesh);
 
-        // Cute Pink Nose
-        const noseGeo = new THREE.BoxGeometry(0.5, 0.3, 0.2);
-        const noseMesh = new THREE.Mesh(noseGeo, this.noseMat);
+        const noseMesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.2), this.noseMat);
         noseMesh.position.set(0, 0.28, 2.15);
         this.headGroup.add(noseMesh);
 
-        // Eyes (Big expressive 3D cartoon tiger eyes)
         const eyeSocketGeo = new THREE.BoxGeometry(0.48, 0.48, 0.1);
         const pupilGeo = new THREE.BoxGeometry(0.2, 0.35, 0.12);
 
-        // Left Eye
         this.leftEye = new THREE.Mesh(eyeSocketGeo, this.goldEyeMat);
         this.leftEye.position.set(0.65, 0.25, 1.55);
         const leftPupil = new THREE.Mesh(pupilGeo, this.blackMat);
@@ -1038,7 +1237,6 @@
         this.leftEye.add(leftPupil);
         this.headGroup.add(this.leftEye);
 
-        // Right Eye
         this.rightEye = new THREE.Mesh(eyeSocketGeo, this.goldEyeMat);
         this.rightEye.position.set(-0.65, 0.25, 1.55);
         const rightPupil = new THREE.Mesh(pupilGeo, this.blackMat);
@@ -1046,21 +1244,18 @@
         this.rightEye.add(rightPupil);
         this.headGroup.add(this.rightEye);
 
-        // Lower Jaw (Animated to hinge open for chomping food!)
         this.jaw = new THREE.Group();
-        this.jaw.position.set(0, -0.65, 1.1); // hinge pivot
+        this.jaw.position.set(0, -0.65, 1.1);
         this.headGroup.add(this.jaw);
 
         const jawMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.45, 1.2), this.whiteMat);
         jawMesh.position.set(0, -0.1, 0.55);
         this.jaw.add(jawMesh);
 
-        // Pink Tongue
         this.tongue = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.2, 0.9), this.pinkMat);
         this.tongue.position.set(0, 0.18, 0.55);
         this.jaw.add(this.tongue);
 
-        // Sharp Cute Teeth (Canines)
         const fangGeo = new THREE.ConeGeometry(0.12, 0.35, 4);
         fangGeo.rotateX(Math.PI);
         const fangL = new THREE.Mesh(fangGeo, this.whiteMat);
@@ -1071,13 +1266,10 @@
         fangR.position.set(-0.45, -0.6, 2.0);
         this.headGroup.add(fangR);
 
-        // 4 Legs
         this.legs = [];
         const legPositions = [
-          { x: 0.95, z: 1.2 },   // Front Left
-          { x: -0.95, z: 1.2 },  // Front Right
-          { x: 0.95, z: -1.2 },  // Back Left
-          { x: -0.95, z: -1.2 }   // Back Right
+          { x: 0.95, z: 1.2 }, { x: -0.95, z: 1.2 },
+          { x: 0.95, z: -1.2 }, { x: -0.95, z: -1.2 }
         ];
 
         legPositions.forEach((pos) => {
@@ -1097,7 +1289,6 @@
           this.legs.push(legGroup);
         });
 
-        // Striped Wagging Tail
         this.tailGroup = new THREE.Group();
         this.tailGroup.position.set(0, 2.4, -1.9);
         this.torso.add(this.tailGroup);
@@ -1118,25 +1309,20 @@
       }
 
       update(delta, time) {
-        // Smooth scale interpolation based on weight / fullness
         this.currentScale = THREE.MathUtils.lerp(this.currentScale, this.targetScale, delta * 3.0);
         this.group.scale.set(this.currentScale, this.currentScale, this.currentScale);
 
-        // Idle breathing motion
         const breath = Math.sin(time * 3.0) * 0.04;
         this.bodyMesh.scale.set(1 + breath, 1 + breath * 0.8, 1);
 
-        // Tail swish
         this.tailSegments.forEach((seg, idx) => {
           seg.rotation.y = Math.sin(time * 4.0 + idx * 0.6) * 0.35;
           seg.rotation.x = Math.sin(time * 2.0) * 0.1;
         });
 
-        // Ear twitches
         this.leftEar.rotation.x = Math.sin(time * 1.5) * 0.15;
         this.rightEar.rotation.x = Math.cos(time * 1.8) * 0.15;
 
-        // Blinking
         this.blinkTimer += delta;
         if (this.blinkTimer > 4.0) {
           this.leftEye.scale.y = 0.1;
@@ -1148,16 +1334,13 @@
           }
         }
 
-        // State Machine Handling
         if (this.state === 'idle') {
-          // Prowl slowly in gentle loop
           this.walkCycle += delta * 2.5;
           this.legs[0].rotation.x = Math.sin(this.walkCycle) * 0.35;
           this.legs[1].rotation.x = -Math.sin(this.walkCycle) * 0.35;
           this.legs[2].rotation.x = -Math.sin(this.walkCycle) * 0.35;
           this.legs[3].rotation.x = Math.sin(this.walkCycle) * 0.35;
 
-          // Head looks casually around visitors
           const headYaw = Math.sin(time * 0.8) * 0.3;
           this.headGroup.rotation.y = THREE.MathUtils.lerp(this.headGroup.rotation.y, headYaw, delta * 2.0);
           this.headGroup.rotation.x = THREE.MathUtils.lerp(this.headGroup.rotation.x, -0.1, delta * 2.0);
@@ -1165,11 +1348,9 @@
           this.jaw.rotation.x = this.mouthOpenAngle;
 
         } else if (this.state === 'notice' && this.targetFood) {
-          // Track food in air eagerly!
           const targetWorld = new THREE.Vector3();
           this.targetFood.mesh.getWorldPosition(targetWorld);
 
-          // Rotate head towards food
           const dir = targetWorld.clone().sub(this.headGroup.position.clone().add(this.group.position));
           const angleY = Math.atan2(dir.x, dir.z);
           const angleX = -Math.atan2(dir.y, Math.sqrt(dir.x * dir.x + dir.z * dir.z));
@@ -1177,15 +1358,13 @@
           this.headGroup.rotation.y = THREE.MathUtils.lerp(this.headGroup.rotation.y, angleY * 0.7, delta * 8.0);
           this.headGroup.rotation.x = THREE.MathUtils.lerp(this.headGroup.rotation.x, angleX, delta * 8.0);
 
-          // Open mouth anticipation!
           this.mouthOpenAngle = THREE.MathUtils.lerp(this.mouthOpenAngle, 0.75, delta * 10.0);
           this.jaw.rotation.x = this.mouthOpenAngle;
 
         } else if (this.state === 'pounce') {
-          // Mid-air leap animation
-          this.mouthOpenAngle = 1.1; // wide open!
+          this.mouthOpenAngle = 1.1;
           this.jaw.rotation.x = this.mouthOpenAngle;
-          this.headGroup.rotation.x = 0.35; // looking up
+          this.headGroup.rotation.x = 0.35;
 
           this.legs[0].rotation.x = -0.7;
           this.legs[1].rotation.x = -0.7;
@@ -1193,7 +1372,6 @@
           this.legs[3].rotation.x = 0.8;
 
         } else if (this.state === 'chomp') {
-          // Rapid chomping
           this.mouthOpenAngle = (Math.sin(time * 25.0) + 1.0) * 0.45;
           this.jaw.rotation.x = this.mouthOpenAngle;
           this.headGroup.rotation.y = Math.sin(time * 15.0) * 0.15;
@@ -1205,27 +1383,30 @@
         this.state = 'notice';
       }
 
+      /* BUGFIX: Safely fire jump callback ONCE and clear _activeJump! */
       pounceTowards(targetPos, onCatchCallback) {
         this.state = 'pounce';
         const startPos = this.group.position.clone();
         const duration = 0.45;
         let elapsed = 0;
+        let callbackExecuted = false;
 
-        // Turn towards landing spot
         const lookAngle = Math.atan2(targetPos.x - startPos.x, targetPos.z - startPos.z);
         this.group.rotation.y = lookAngle;
 
         const jumpInterval = (dt) => {
+          if (callbackExecuted) return;
           elapsed += dt;
           const t = Math.min(elapsed / duration, 1.0);
           
-          // Parabolic jump arc
           const jumpHeight = Math.sin(t * Math.PI) * 2.8;
           this.group.position.x = THREE.MathUtils.lerp(startPos.x, targetPos.x, t);
           this.group.position.z = THREE.MathUtils.lerp(startPos.z, targetPos.z, t);
           this.group.position.y = jumpHeight;
 
           if (t >= 1.0) {
+            callbackExecuted = true;
+            this._activeJump = null; // Clear so it doesn't loop every frame!
             this.state = 'chomp';
             sound.playChomp();
             if (onCatchCallback) onCatchCallback();
@@ -1241,7 +1422,7 @@
 
       gainWeight(amount = 1.5) {
         this.weight += amount;
-        this.targetScale = Math.min(1.0 + (this.weight - 215) * 0.005, 1.85); // gets chonky!
+        this.targetScale = Math.min(1.0 + (this.weight - 215) * 0.005, 1.85);
       }
     }
 
@@ -1257,15 +1438,13 @@
       }
 
       buildGround() {
-        // Lush green grassy enclosure pit with natural dirt rim
         const pitGeo = new THREE.CylinderGeometry(18, 17, 1.5, 32);
-        const pitMat = new THREE.MeshLambertMaterial({ color: 0x4caf50 }); // Grass
+        const pitMat = new THREE.MeshLambertMaterial({ color: 0x4caf50 });
         const pit = new THREE.Mesh(pitGeo, pitMat);
         pit.position.y = -0.75;
         pit.receiveShadow = true;
         this.scene.add(pit);
 
-        // Ground stone paths & dirt patches
         const dirtGeo = new THREE.CircleGeometry(16, 24);
         const dirtMat = new THREE.MeshLambertMaterial({ color: 0x5d9b43 });
         const dirt = new THREE.Mesh(dirtGeo, dirtMat);
@@ -1274,7 +1453,6 @@
         dirt.receiveShadow = true;
         this.scene.add(dirt);
 
-        // Tiger Splash Water Pond
         const pondGeo = new THREE.CylinderGeometry(4.5, 4.2, 0.4, 20);
         const pondMat = new THREE.MeshLambertMaterial({
           color: 0x29b6f6,
@@ -1285,7 +1463,6 @@
         pond.position.set(-6, -0.15, -3);
         this.scene.add(pond);
 
-        // Pond rim stones
         for (let a = 0; a < Math.PI * 2; a += 0.5) {
           const r = 4.6 + Math.random() * 0.4;
           const rockGeo = new THREE.DodecahedronGeometry(0.5 + Math.random() * 0.3, 0);
@@ -1298,7 +1475,6 @@
       }
 
       buildDeckAndRailings() {
-        // Elevated Visitor Observation Deck (Front viewing curve)
         const deckGroup = new THREE.Group();
         this.scene.add(deckGroup);
 
@@ -1310,7 +1486,6 @@
         deck.receiveShadow = true;
         deckGroup.add(deck);
 
-        // Transparent Safety Glass Railing
         const glassGeo = new THREE.CylinderGeometry(15.2, 15.2, 1.8, 32, 1, true, Math.PI * 0.15, Math.PI * 0.7);
         const glassMat = new THREE.MeshPhysicalMaterial({
           color: 0xe0f7fa,
@@ -1324,7 +1499,6 @@
         glass.position.y = 3.3;
         deckGroup.add(glass);
 
-        // Handrail top rim
         const railGeo = new THREE.TorusGeometry(15.2, 0.1, 8, 48, Math.PI * 0.7);
         const railMat = new THREE.MeshLambertMaterial({ color: 0xffb300 });
         const rail = new THREE.Mesh(railGeo, railMat);
@@ -1333,7 +1507,6 @@
         rail.position.y = 4.2;
         deckGroup.add(rail);
 
-        // Safety Warning Signboard
         const signGeo = new THREE.BoxGeometry(2.4, 1.2, 0.1);
         const signMat = new THREE.MeshLambertMaterial({ color: 0xffeb3b });
         const sign = new THREE.Mesh(signGeo, signMat);
@@ -1343,7 +1516,6 @@
       }
 
       buildNaturalDecorations() {
-        // Climbing Log Structure for Tiger
         const logMat = new THREE.MeshLambertMaterial({ color: 0x5d4037 });
         const leafMat = new THREE.MeshLambertMaterial({ color: 0x2e7d32 });
 
@@ -1359,7 +1531,6 @@
         log2.castShadow = true;
         this.scene.add(log2);
 
-        // Stylized Trees around the back
         const treePositions = [
           { x: -11, z: -8 }, { x: -8, z: -11 }, { x: 0, z: -13 },
           { x: 9, z: -10 }, { x: 12, z: -6 }
@@ -1380,7 +1551,7 @@
     }
 
     /* =========================================================================
-       5. INTERACTIVE ZOO VISITORS (CAN BE THROWN / YEETED AS FOOD!)
+       5. INTERACTIVE ZOO VISITORS
        ========================================================================= */
     class VisitorManager {
       constructor(scene) {
@@ -1388,7 +1559,7 @@
         this.visitors = [];
         this.clothingColors = [0xe91e63, 0x00bcd4, 0xff9800, 0x8bc34a, 0x9c27b0, 0xffeb3b, 0x3f51b5];
         this.skinColors = [0xffdbac, 0xf1c27d, 0xe0ac69, 0xc68642];
-        this.spawnDeckVisitors(12);
+        this.spawnDeckVisitors(10);
       }
 
       spawnDeckVisitors(count = 10) {
@@ -1399,12 +1570,10 @@
 
       createVisitor() {
         const group = new THREE.Group();
-        
-        // Random placement along observation deck
         const angle = Math.PI * 0.22 + Math.random() * (Math.PI * 0.56);
         const radius = 16.0 + Math.random() * 2.8;
         group.position.set(Math.cos(angle) * radius, 2.4, Math.sin(angle) * radius);
-        group.lookAt(0, 1.5, 0); // Looking down into the tiger pit!
+        group.lookAt(0, 1.5, 0);
 
         const shirtColor = this.clothingColors[Math.floor(Math.random() * this.clothingColors.length)];
         const skinColor = this.skinColors[Math.floor(Math.random() * this.skinColors.length)];
@@ -1413,23 +1582,19 @@
         const pantsMat = new THREE.MeshLambertMaterial({ color: 0x263238 });
         const skinMat = new THREE.MeshLambertMaterial({ color: skinColor });
 
-        // Torso
         const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.4), bodyMat);
         torso.position.y = 1.35;
         torso.castShadow = true;
         group.add(torso);
 
-        // Head
         const head = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.45), skinMat);
         head.position.y = 2.05;
         group.add(head);
 
-        // Hair / Cap
         const cap = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.5), new THREE.MeshLambertMaterial({ color: 0x111111 }));
         cap.position.y = 2.3;
         group.add(cap);
 
-        // Limbs for comic flailing
         const armL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.7, 0.2), bodyMat);
         armL.position.set(0.45, 1.3, 0.1);
         group.add(armL);
@@ -1446,7 +1611,6 @@
         legR.position.set(-0.2, 0.45, 0);
         group.add(legR);
 
-        // Cute Smartphone / Camera held by visitor
         const phone = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.2, 0.04), new THREE.MeshLambertMaterial({ color: 0xeeeeee, emissive: 0x4fc3f7, emissiveIntensity: 0.5 }));
         phone.position.set(0, 1.6, 0.5);
         group.add(phone);
@@ -1464,7 +1628,6 @@
       }
 
       update(delta, time) {
-        // Animated spectator idle: cheering, leaning over fence, snapping photos
         this.visitors.forEach(v => {
           if (!v.userData.isThrown) {
             const t = time * 2.0 + v.userData.idleOffset;
@@ -1507,21 +1670,18 @@
         const group = new THREE.Group();
 
         if (type === 'meat') {
-          // Thick Juicy Raw Steak
           const steakGeo = new THREE.CylinderGeometry(0.8, 0.9, 0.4, 8);
-          const steakMat = new THREE.MeshLambertMaterial({ color: 0xd32f2f }); // Raw Red
+          const steakMat = new THREE.MeshLambertMaterial({ color: 0xd32f2f });
           const steak = new THREE.Mesh(steakGeo, steakMat);
           steak.rotation.x = Math.PI / 4;
           group.add(steak);
 
-          // White bone in steak
           const bone = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.45, 6), new THREE.MeshLambertMaterial({ color: 0xffffff }));
           bone.rotation.x = Math.PI / 4;
           bone.position.set(0.1, 0, 0);
           group.add(bone);
 
         } else if (type === 'chicken') {
-          // Crispy Fried / Golden Drumstick
           const body = new THREE.Mesh(new THREE.SphereGeometry(0.65, 8, 8), new THREE.MeshLambertMaterial({ color: 0xffb300 }));
           body.scale.set(1.4, 0.9, 0.9);
           group.add(body);
@@ -1532,12 +1692,10 @@
           group.add(bone);
 
         } else if (type === 'watermelon') {
-          // Round Striped Green Watermelon
           const melon = new THREE.Mesh(new THREE.SphereGeometry(0.85, 12, 12), new THREE.MeshLambertMaterial({ color: 0x2e7d32 }));
           group.add(melon);
 
         } else if (type === 'pig') {
-          // Golden Pig Trophy
           const pig = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 1.4), new THREE.MeshLambertMaterial({ color: 0xffd700, emissive: 0xffa000, emissiveIntensity: 0.4 }));
           group.add(pig);
           const snout = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.35, 0.3), new THREE.MeshLambertMaterial({ color: 0xff80ab }));
@@ -1566,7 +1724,6 @@
           this.scene.add(mesh);
         }
 
-        // Parabolic physics trajectory
         const duration = 0.85;
         const projectile = {
           mesh,
@@ -1581,8 +1738,7 @@
             x: (Math.random() - 0.5) * 15,
             y: (Math.random() - 0.5) * 15,
             z: (Math.random() - 0.5) * 15
-          },
-          caught: false
+          }
         };
 
         this.projectiles.push(projectile);
@@ -1595,20 +1751,17 @@
           p.elapsed += delta;
           const t = Math.min(p.elapsed / p.duration, 1.0);
 
-          // Flight interpolation with high arc
           const currentX = THREE.MathUtils.lerp(p.start.x, p.target.x, t);
           const currentZ = THREE.MathUtils.lerp(p.start.z, p.target.z, t);
           const baseHeight = THREE.MathUtils.lerp(p.start.y, p.target.y, t);
           const arcHeight = Math.sin(t * Math.PI) * (p.peakHeight - baseHeight);
           p.mesh.position.set(currentX, baseHeight + arcHeight, currentZ);
 
-          // Wild rotation & flailing
           p.mesh.rotation.x += p.rotSpeed.x * delta;
           p.mesh.rotation.y += p.rotSpeed.y * delta;
           p.mesh.rotation.z += p.rotSpeed.z * delta;
 
           if (p.isVisitor && p.mesh.userData) {
-            // Visitor flails limbs in panic!
             p.mesh.userData.armL.rotation.x = Math.sin(p.elapsed * 30.0) * 1.2;
             p.mesh.userData.armR.rotation.x = -Math.sin(p.elapsed * 30.0) * 1.2;
             p.mesh.userData.legL.rotation.x = Math.cos(p.elapsed * 25.0) * 1.0;
@@ -1616,7 +1769,6 @@
           }
 
           if (t >= 1.0) {
-            // Hit ground or Seolho
             onLandCallback(p);
             if (!p.isVisitor) {
               this.scene.remove(p.mesh);
@@ -1638,6 +1790,7 @@
 
         this.currentFoodType = 'meat';
         this.victimsCount = 0;
+        this.totalScore = 0;
         this.combo = 0;
         this.comboTimer = null;
         this.happiness = 80;
@@ -1671,7 +1824,7 @@
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.06;
-        this.controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+        this.controls.maxPolarAngle = Math.PI / 2 - 0.05;
         this.controls.minDistance = 6;
         this.controls.maxDistance = 45;
         this.controls.target.set(0, 2.0, 0);
@@ -1698,14 +1851,13 @@
         this.sunLight.shadow.bias = -0.0005;
         this.scene.add(this.sunLight);
 
-        // Soft sky hemisphere light
         this.hemiLight = new THREE.HemisphereLight(0x70b5f9, 0x388e3c, 0.4);
         this.scene.add(this.hemiLight);
       }
 
       initGameObjects() {
         this.enclosure = new ZooEnclosure(this.scene);
-        this.tiger = new SeolhoTiger(this.scene, true); // White tiger by default
+        this.tiger = new SeolhoTiger(this.scene, true);
         this.visitors = new VisitorManager(this.scene);
         this.projectiles = new ProjectileManager(this.scene);
       }
@@ -1733,14 +1885,14 @@
             
             const hint = document.getElementById('hint-text');
             if (this.currentFoodType === 'visitor') {
-              hint.innerHTML = '<span>😱 <strong>관객 투척 모드:</strong> 클릭하면 난간의 관람객을 집어던집니다! 으아악!</span>';
+              hint.querySelector('span').innerHTML = '😱 <strong>관객 투척 모드:</strong> 클릭하면 난간의 관람객을 던집니다!';
             } else {
-              hint.innerHTML = '<span>💡 우리 안을 터치하면 먹이를 던집니다! 관객을 직접 눌러도 던질 수 있어요!</span>';
+              hint.querySelector('span').innerHTML = '💡 화면 터치로 먹이 투척! 관객을 터치하면 날아갑니다!';
             }
           });
         });
 
-        // Interaction (Click or Touch)
+        // Pointer Click / Touch for Feeding
         let isDragging = false;
         let startPos = { x: 0, y: 0 };
 
@@ -1786,6 +1938,46 @@
           this.showNotice('👥 새로운 관광객 단체 방문!');
         });
 
+        // UI Collapsible Stats Panel
+        const statsCard = document.getElementById('tiger-stats');
+        const toggleStatsBtn = document.getElementById('btn-toggle-stats');
+        
+        // Auto-collapse on small mobile screens initially for clean view
+        if (window.innerWidth <= 768) {
+          statsCard.classList.add('collapsed');
+          toggleStatsBtn.textContent = '상태 ▸';
+        }
+
+        toggleStatsBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isCollapsed = statsCard.classList.toggle('collapsed');
+          toggleStatsBtn.textContent = isCollapsed ? '상태 ▸' : '상태 ▾';
+        });
+
+        // Hide/Show Full UI (Immersive Mode)
+        const uiLayer = document.getElementById('ui-layer');
+        const showUiBtn = document.getElementById('btn-show-ui');
+        const hideUiBtn = document.getElementById('btn-hide-ui');
+
+        hideUiBtn.addEventListener('click', () => {
+          uiLayer.classList.add('ui-hidden');
+          showUiBtn.style.display = 'block';
+          this.showNotice('👁️ 몰입 모드 (화면을 터치해 먹이를 주세요!)');
+        });
+
+        showUiBtn.addEventListener('click', () => {
+          uiLayer.classList.remove('ui-hidden');
+          showUiBtn.style.display = 'none';
+        });
+
+        // Close Hint Banner
+        const closeHintBtn = document.getElementById('btn-close-hint');
+        if (closeHintBtn) {
+          closeHintBtn.addEventListener('click', () => {
+            document.getElementById('hint-text').style.display = 'none';
+          });
+        }
+
         // Sound Toggle
         const audioBtn = document.getElementById('btn-audio');
         audioBtn.addEventListener('click', () => {
@@ -1813,11 +2005,9 @@
           this.controls.target.set(0, 2.0, 0);
           this.camera.position.set(0, 11, 23);
         } else if (type === 'deck') {
-          // Standing behind the glass railing looking down
           this.controls.target.set(0, 1.8, 0);
           this.camera.position.set(0, 4.8, 16.5);
         } else if (type === 'front') {
-          // Eye level with Seolho
           this.controls.target.copy(this.tiger.group.position).add(new THREE.Vector3(0, 2.0, 0));
           this.camera.position.set(0, 3.2, 7.5);
         } else if (type === 'top') {
@@ -1855,7 +2045,7 @@
         this.mouse.y = -(clientY / this.height) * 2 + 1;
         this.raycaster.setFromCamera(this.mouse, this.camera);
 
-        // Check if user clicked on a visitor directly!
+        // Check if user clicked on a spectator directly
         const visitorMeshes = [];
         this.visitors.visitors.forEach(v => {
           if (!v.userData.isThrown) {
@@ -1875,7 +2065,7 @@
           return;
         }
 
-        // Raycast against the zoo ground/pit
+        // Raycast against zoo pit
         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
         const groundHit = intersects.find(hit => hit.point.y < 3.0 && hit.point.length() < 16.5);
 
@@ -1883,7 +2073,6 @@
         if (groundHit) {
           targetPosition = groundHit.point;
         } else {
-          // Fallback to in front of tiger
           targetPosition = this.tiger.group.position.clone().add(new THREE.Vector3((Math.random() - 0.5) * 4, 0, (Math.random() - 0.5) * 4));
         }
 
@@ -1891,7 +2080,6 @@
           const visitor = this.visitors.getNearestVisitor();
           this.throwVisitor(visitor, targetPosition);
         } else {
-          // Throw selected food from spectator deck / camera point
           const throwOrigin = new THREE.Vector3(
             this.camera.position.x * 0.7 + (Math.random() - 0.5) * 3,
             4.5,
@@ -1901,7 +2089,6 @@
           const proj = this.projectiles.spawn(throwOrigin, targetPosition, this.currentFoodType);
           this.tiger.noticeFood(proj);
 
-          // Seolho leaps to catch!
           setTimeout(() => {
             this.tiger.pounceTowards(targetPosition, () => {
               this.onFoodEaten(this.currentFoodType, clientX, clientY);
@@ -1919,20 +2106,19 @@
         const proj = this.projectiles.spawn(start, target, 'visitor', visitor);
         this.tiger.noticeFood(proj);
 
-        this.showComicPopup(window.innerWidth / 2, window.innerHeight * 0.4, '😱 "으아아악! 날 왜 던져?!"');
+        this.showComicPopup(window.innerWidth / 2, window.innerHeight * 0.35, '😱 "으아아악! 날 왜 던져?!"');
 
         setTimeout(() => {
           this.tiger.pounceTowards(target, () => {
             this.visitors.removeVisitor(visitor);
             this.victimsCount++;
-            document.getElementById('victim-count').textContent = `${this.victimsCount}명 😱`;
             this.onFoodEaten('visitor', window.innerWidth / 2, window.innerHeight * 0.5);
           });
         }, 320);
       }
 
+      /* BUGFIX: Clean single invocation per caught food */
       onFoodEaten(type, screenX, screenY) {
-        // Increment weight & fullness
         let weightGain = 1.0;
         let points = 100;
         let shout = '쩝쩝! 꿀맛!';
@@ -1961,17 +2147,6 @@
           confetti({ particleCount: 70, spread: 60 });
         }
 
-        this.tiger.gainWeight(weightGain);
-        this.fullness = Math.min(100, this.fullness + 8);
-        this.happiness = Math.min(100, this.happiness + 5);
-
-        // Update UI
-        document.getElementById('tiger-weight').textContent = `${this.tiger.weight.toFixed(1)} kg`;
-        document.getElementById('fullness-pct').textContent = `${this.fullness}%`;
-        document.getElementById('fullness-bar').style.width = `${this.fullness}%`;
-        document.getElementById('happiness-pct').textContent = `${this.happiness}%`;
-        document.getElementById('happiness-bar').style.width = `${this.happiness}%`;
-
         // Combo Logic
         this.combo++;
         clearTimeout(this.comboTimer);
@@ -1979,16 +2154,38 @@
           this.combo = 0;
         }, 3000);
 
+        const earnedPoints = points * Math.max(1, this.combo);
+        this.totalScore += earnedPoints;
+
+        this.tiger.gainWeight(weightGain);
+        this.fullness = Math.min(100, this.fullness + 8);
+        this.happiness = Math.min(100, this.happiness + 5);
+
+        // Update UI displays (Detailed + Mini summary chips)
+        document.getElementById('tiger-weight').textContent = `${this.tiger.weight.toFixed(1)} kg`;
+        document.getElementById('mini-weight').textContent = `${this.tiger.weight.toFixed(1)}kg`;
+
+        document.getElementById('tiger-score').textContent = `${this.totalScore.toLocaleString()} 점`;
+        document.getElementById('mini-score').textContent = `${this.totalScore.toLocaleString()}점`;
+
+        document.getElementById('victim-count').textContent = `${this.victimsCount}명 😱`;
+        document.getElementById('mini-victim').textContent = `${this.victimsCount}명`;
+
+        document.getElementById('fullness-pct').textContent = `${this.fullness}%`;
+        document.getElementById('fullness-bar').style.width = `${this.fullness}%`;
+        document.getElementById('happiness-pct').textContent = `${this.happiness}%`;
+        document.getElementById('happiness-bar').style.width = `${this.happiness}%`;
+
         if (this.combo > 1) {
-          this.showNotice(`🔥 COMBO x${this.combo}! (+${points * this.combo}점)`);
+          this.showNotice(`🔥 COMBO x${this.combo}! (+${earnedPoints.toLocaleString()}점)`);
         } else {
-          this.showNotice(`+${points}점!`);
+          this.showNotice(`+${earnedPoints.toLocaleString()}점!`);
         }
 
         this.showComicPopup(screenX || window.innerWidth / 2, screenY || window.innerHeight / 2, shout);
 
         if (this.fullness >= 100) {
-          this.showNotice('🎉 설호의 배가 꽉 찼습니다! 슈퍼 타이거 각성!');
+          this.showNotice('🎉 설호 배부름 100%! 슈퍼 타이거 각성!');
           confetti({ particleCount: 100, spread: 90, origin: { y: 0.6 } });
           sound.playFanfare();
           this.fullness = 50;
@@ -2020,24 +2217,20 @@
         const delta = this.clock.getDelta();
         const time = this.clock.getElapsedTime();
 
-        // Update tiger
         this.tiger.update(delta, time);
         if (this.tiger._activeJump) {
           this.tiger._activeJump(delta);
         }
 
-        // Update spectators & physics
         this.visitors.update(delta, time);
-        this.projectiles.update(delta, (p) => {
-          // Landing effect if not caught
-        });
+        this.projectiles.update(delta, (p) => {});
 
         this.controls.update();
         this.renderer.render(this.scene, this.camera);
       }
     }
 
-    // Start Game on window load
+    // Start Game
     window.addEventListener('DOMContentLoaded', () => {
       window.game = new SeolhoGame();
     });
