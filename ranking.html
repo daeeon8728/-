@@ -634,6 +634,7 @@
     let currentFilter = 'all';
     let searchQuery = '';
     let playerNickname = localStorage.getItem('seolho_player_nickname') || '';
+    let isLiveServerConnected = true;
 
     // Elements
     const myRankCardEl = document.getElementById('my-rank-card');
@@ -694,7 +695,9 @@
             <div class="my-rank-title">
               <span>👤 사육사:</span>
               <span style="color: #ffd54f; font-weight: 800;">${playerNickname}</span>
-              <span class="live-sync-badge">🟢 점수 실시간 연동 중</span>
+              <span class="live-sync-badge" style="${isLiveServerConnected ? '' : 'background: rgba(255, 152, 0, 0.2); border-color: #ff9800; color: #ffb74d;'}">
+                ${isLiveServerConnected ? '🟢 전세계 실시간 연동 중' : '⚠️ 기기 로컬 모드 (서버 미연동)'}
+              </span>
             </div>
             <div style="display: flex; gap: 8px; align-items: center;">
               <button class="btn-rank-action" id="btn-toggle-edit" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);">✏️ 닉네임 변경</button>
@@ -755,7 +758,7 @@
             <span style="font-size: 12px; color: #ffd54f;">현재 내 게임 기록: ${stats.score.toLocaleString()}점 • ${stats.weight.toFixed(1)}kg</span>
           </div>
           <p style="font-size: 13px; color: #cfd8dc; line-height: 1.5;">
-            사육사 닉네임을 1회 등록하면, 게임을 플레이할 때마다 점수가 실시간 순위표에 계속 자동 갱신됩니다!
+            사육사 닉네임을 1회 등록하면, 다른 기기에서도 점수가 실시간 순위표에 계속 자동 갱신됩니다!
           </p>
           <div class="my-rank-form" style="margin-top: 4px;">
             <input type="text" id="reg-nick-input" class="my-rank-input" placeholder="사육사 닉네임 입력 (최대 10자)" maxlength="10">
@@ -802,7 +805,7 @@
 
       // Try sending to server
       try {
-        await fetch('/api/leaderboard', {
+        const res = await fetch('/api/leaderboard', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -813,11 +816,17 @@
             stage: stats.stage
           })
         });
-      } catch (e) {}
+        const data = await res.json();
+        if (data.isLiveServer === false) {
+          alert(`⚠️ [${cleanNick}] 등록 완료 (로컬 모드)\n현재 서버에 글로벌 DB가 연결되지 않아 이 기기에서만 순위가 보입니다.\nVercel Storage에서 Upstash KV를 연결해주세요!`);
+        } else {
+          alert(`🎉 [${cleanNick}] 사육사님 등록 완료!\n다른 폰에서도 실시간으로 점수와 순위가 즉시 연동됩니다!`);
+        }
+      } catch (e) {
+        alert(`[${cleanNick}] 등록 완료! (로컬 저장됨)`);
+      }
 
-      alert(`🎉 [${cleanNick}] 사육사님 등록 완료!\n이제 게임에서 먹이를 줄 때마다 점수가 계속 자동으로 업데이트됩니다!`);
       confetti({ particleCount: 100, spread: 80 });
-
       fetchLeaderboard();
     }
 
@@ -851,11 +860,13 @@
       try {
         const res = await fetch('/api/leaderboard');
         const data = await res.json();
+        isLiveServerConnected = data.isLiveServer !== false;
         if (data.leaderboard && Array.isArray(data.leaderboard) && data.leaderboard.length > 0) {
           list = data.leaderboard;
         }
       } catch (err) {
         console.warn('API error, using local storage mode:', err);
+        isLiveServerConnected = false;
       }
 
       // 3. Guarantee that player's nickname is present and has the up-to-date score

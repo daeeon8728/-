@@ -1,0 +1,13 @@
+{
+  "name": "seolho-feeding-3d",
+  "version": "1.0.0",
+  "description": "설호 먹이주기 3D - 실시간 멀티 랭킹",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["game", "threejs", "tiger", "ranking", "upstash"],
+  "author": "",
+  "license": "MIT"
+}
