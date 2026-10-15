@@ -38,6 +38,14 @@ function saveLocalLeaderboard(list) {
   }
 }
 
+let leaderboardHandler = null;
+import('./api/leaderboard.js').then(m => {
+  leaderboardHandler = m.default;
+  console.log('✅ Upstash Cloud Leaderboard Handler loaded in server.js');
+}).catch(err => {
+  console.warn('api/leaderboard.js preload error:', err);
+});
+
 const server = http.createServer((req, res) => {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -52,82 +60,45 @@ const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = parsedUrl.pathname;
 
-  // --- API: /api/leaderboard ---
+  // --- API: /api/leaderboard (Upstash KV Cloud Connected) ---
   if (pathname === '/api/leaderboard') {
-    if (req.method === 'GET') {
-      const list = readLocalLeaderboard();
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      return res.end(JSON.stringify({
-        success: true,
-        isLiveServer: true,
-        source: 'local_server_shared',
-        message: '로컬 멀티 디바이스 공유 서버 연동됨',
-        leaderboard: list
-      }));
-    }
-
-    if (req.method === 'POST') {
-      let bodyStr = '';
-      req.on('data', chunk => { bodyStr += chunk; });
-      req.on('end', () => {
-        try {
-          const body = JSON.parse(bodyStr || '{}');
-          const { name, score, weight, victims, stage } = body;
-
-          if (!score || Number(score) < 1) {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            return res.end(JSON.stringify({ error: '점수가 유효하지 않습니다.' }));
-          }
-
-          const cleanName = (name || '익명 사육사').trim().slice(0, 15);
-          const scoreVal = Math.floor(Number(score));
-          const weightVal = Number(weight || 215.0);
-          const victimsVal = Number(victims || 0);
-          const stageVal = stage || '동물원';
-          const dateVal = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-
-          const list = readLocalLeaderboard();
-          const existingIdx = list.findIndex(item => item.name === cleanName);
-
-          const newEntry = {
-            name: cleanName,
-            score: scoreVal,
-            weight: weightVal,
-            victims: victimsVal,
-            stage: stageVal,
-            date: dateVal,
-            timestamp: Date.now()
-          };
-
-          if (existingIdx >= 0) {
-            list[existingIdx] = {
-              ...list[existingIdx],
-              ...newEntry,
-              score: Math.max(list[existingIdx].score || 0, scoreVal)
-            };
-          } else {
-            list.push(newEntry);
-          }
-
-          list.sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0));
-          list.forEach((item, idx) => { item.rank = idx + 1; });
-
-          saveLocalLeaderboard(list);
-
-          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          return res.end(JSON.stringify({
-            success: true,
-            isLiveServer: true,
-            source: 'local_server_shared',
-            message: `🎉 [${cleanName}]님의 점수(${scoreVal.toLocaleString()}점)가 로컬 네트워크 순위표에 갱신되었습니다!`
-          }));
-        } catch (err) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify({ error: err.message }));
+    let bodyStr = '';
+    req.on('data', chunk => { bodyStr += chunk; });
+    req.on('end', async () => {
+      try {
+        let body = {};
+        if (bodyStr) {
+          try { body = JSON.parse(bodyStr); } catch (e) { body = bodyStr; }
         }
-      });
-      return;
-    }
+        req.body = body;
+
+        const resAdapter = {
+          setHeader: (k, v) => res.setHeader(k, v),
+          status: (code) => ({
+            json: (data) => {
+              res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify(data));
+            },
+            end: () => {
+              res.writeHead(code);
+              res.end();
+            }
+          })
+        };
+
+        if (!leaderboardHandler) {
+          const mod = await import('./api/leaderboard.js');
+          leaderboardHandler = mod.default;
+        }
+
+        await leaderboardHandler(req, resAdapter);
+      } catch (err) {
+        console.error('API Error in server.js:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: err.message, isLiveServer: false }));
+      }
+    });
+    return;
   }
 
   // --- Static Files ---

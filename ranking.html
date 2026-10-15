@@ -780,6 +780,109 @@
       }
     }
 
+    // Direct Upstash REST API credentials for guaranteed multi-device cloud sync
+    const UPSTASH_REST_URL = 'https://communal-foxhound-121640.upstash.io';
+    const UPSTASH_REST_TOKEN = 'gQAAAAAAAdsoAAIgcDFmOTJmYzE4ZmZmZGU0OTk4OTliYzYzYzYyMzc4MmE1Yw';
+
+    async function directUpstashFetchLeaderboard() {
+      try {
+        const zres = await fetch(UPSTASH_REST_URL, {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + UPSTASH_REST_TOKEN,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(['ZREVRANGE', 'seolho_leaderboard_v3', '0', '49', 'WITHSCORES'])
+        });
+        const zdata = await zres.json();
+        const rawList = zdata.result || [];
+        if (!Array.isArray(rawList) || rawList.length === 0) return null;
+
+        const names = [];
+        const scores = [];
+        for (let i = 0; i < rawList.length; i += 2) {
+          names.push(rawList[i]);
+          scores.push(Number(rawList[i + 1]));
+        }
+
+        let metaMap = {};
+        if (names.length > 0) {
+          try {
+            const mres = await fetch(UPSTASH_REST_URL, {
+              method: 'POST',
+              headers: {
+                'Authorization': 'Bearer ' + UPSTASH_REST_TOKEN,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(['HMGET', 'seolho_player_meta_v3', ...names])
+            });
+            const mdata = await mres.json();
+            const metaArr = mdata.result || [];
+            names.forEach((name, idx) => {
+              if (metaArr[idx]) {
+                try { metaMap[name] = JSON.parse(metaArr[idx]); } catch (e) {}
+              }
+            });
+          } catch (e) {}
+        }
+
+        return names.map((name, idx) => {
+          const meta = metaMap[name] || {};
+          return {
+            rank: idx + 1,
+            name: name,
+            score: scores[idx] || meta.score || 0,
+            weight: meta.weight || 215.0,
+            victims: meta.victims || 0,
+            stage: meta.stage || '동물원',
+            date: meta.date || '최근'
+          };
+        });
+      } catch (err) {
+        console.warn('Direct Upstash fetch error:', err);
+        return null;
+      }
+    }
+
+    async function directUpstashSaveScore(entry) {
+      try {
+        const scoreVal = Math.floor(Number(entry.score));
+        const cleanName = (entry.name || '익명 사육사').trim().slice(0, 15);
+        const metaPayload = JSON.stringify({
+          name: cleanName,
+          score: scoreVal,
+          weight: Number(entry.weight || 215.0),
+          victims: Number(entry.victims || 0),
+          stage: entry.stage || '동물원',
+          date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+          timestamp: Date.now()
+        });
+
+        await fetch(UPSTASH_REST_URL, {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + UPSTASH_REST_TOKEN,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(['ZADD', 'seolho_leaderboard_v3', String(scoreVal), cleanName])
+        });
+
+        await fetch(UPSTASH_REST_URL, {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + UPSTASH_REST_TOKEN,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(['HSET', 'seolho_player_meta_v3', cleanName, metaPayload])
+        });
+
+        return true;
+      } catch (err) {
+        console.warn('Direct Upstash save error:', err);
+        return false;
+      }
+    }
+
     // Handle Nickname Registration or Update
     async function handleNicknameUpdate(newNick) {
       const cleanNick = (newNick || '').trim();
@@ -803,7 +906,8 @@
       };
       localStorage.setItem('seolho_my_rank_entry', JSON.stringify(myEntry));
 
-      // Try sending to server
+      let synced = false;
+      // 1. Try serverless / local server API
       try {
         const res = await fetch('/api/leaderboard', {
           method: 'POST',
@@ -816,13 +920,27 @@
             stage: stats.stage
           })
         });
-        const data = await res.json();
-        if (data.isLiveServer === false) {
-          alert(`⚠️ [${cleanNick}] 등록 완료 (로컬 모드)\n현재 서버에 글로벌 DB가 연결되지 않아 이 기기에서만 순위가 보입니다.\nVercel Storage에서 Upstash KV를 연결해주세요!`);
-        } else {
-          alert(`🎉 [${cleanNick}] 사육사님 등록 완료!\n다른 폰에서도 실시간으로 점수와 순위가 즉시 연동됩니다!`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.isLiveServer !== false) synced = true;
         }
-      } catch (e) {
+      } catch (e) {}
+
+      // 2. Direct Upstash fallback if server endpoint unavailable or failed
+      if (!synced) {
+        synced = await directUpstashSaveScore({
+          name: cleanNick,
+          score: stats.score,
+          weight: stats.weight,
+          victims: stats.victims,
+          stage: stats.stage
+        });
+      }
+
+      isLiveServerConnected = synced;
+      if (synced) {
+        alert(`🎉 [${cleanNick}] 사육사님 등록 완료!\n다른 폰에서도 점수와 랭킹이 실시간으로 즉시 연동됩니다!`);
+      } else {
         alert(`[${cleanNick}] 등록 완료! (로컬 저장됨)`);
       }
 
@@ -835,37 +953,57 @@
       rowsListEl.innerHTML = '<div class="empty-state">실시간 순위표를 불러오는 중입니다...</div>';
 
       // 1. Load local base rankings
-      let localList = [];
+      let localList = [
+        { name: '여의도_백호선생', score: 98500, weight: 485.5, victims: 52, stage: '국회의사당', date: '방금 전' },
+        { name: '학점포기자', score: 76200, weight: 412.0, victims: 41, stage: '대학교', date: '10분 전' },
+        { name: '부산상어친구', score: 64100, weight: 378.2, victims: 33, stage: '동물원', date: '30분 전' },
+        { name: '대학원탈출넘버원', score: 51200, weight: 335.0, victims: 28, stage: '대학교', date: '1시간 전' },
+        { name: '황금멧돼지사냥꾼', score: 43900, weight: 295.4, victims: 21, stage: '국회의사당', date: '2시간 전' },
+        { name: '설호맘', score: 32000, weight: 268.0, victims: 14, stage: '동물원', date: '3시간 전' },
+        { name: '치킨킬러', score: 21500, weight: 242.0, victims: 9, stage: '동물원', date: '5시간 전' }
+      ];
       try {
-        localList = JSON.parse(localStorage.getItem('seolho_local_leaderboard') || '[]');
+        const stored = JSON.parse(localStorage.getItem('seolho_local_leaderboard') || '[]');
+        if (Array.isArray(stored) && stored.length > 0) localList = stored;
       } catch (e) {}
-
-      if (!Array.isArray(localList) || localList.length === 0) {
-        localList = [
-          { name: '여의도_백호선생', score: 98500, weight: 485.5, victims: 52, stage: '국회의사당', date: '방금 전' },
-          { name: '학점포기자', score: 76200, weight: 412.0, victims: 41, stage: '대학교', date: '10분 전' },
-          { name: '부산상어친구', score: 64100, weight: 378.2, victims: 33, stage: '동물원', date: '30분 전' },
-          { name: '대학원탈출넘버원', score: 51200, weight: 335.0, victims: 28, stage: '대학교', date: '1시간 전' },
-          { name: '황금멧돼지사냥꾼', score: 43900, weight: 295.4, victims: 21, stage: '국회의사당', date: '2시간 전' },
-          { name: '설호맘', score: 32000, weight: 268.0, victims: 14, stage: '동물원', date: '3시간 전' },
-          { name: '치킨킬러', score: 21500, weight: 242.0, victims: 9, stage: '동물원', date: '5시간 전' }
-        ];
-      }
 
       const stats = getMyLocalStats();
       playerNickname = localStorage.getItem('seolho_player_nickname') || '';
 
-      // 2. Fetch remote leaderboard if available
-      let list = localList;
+      // 2. Fetch remote leaderboard (API or Direct Upstash)
+      let list = null;
       try {
         const res = await fetch('/api/leaderboard');
-        const data = await res.json();
-        isLiveServerConnected = data.isLiveServer !== false;
-        if (data.leaderboard && Array.isArray(data.leaderboard) && data.leaderboard.length > 0) {
-          list = data.leaderboard;
+        if (res.ok) {
+          const data = await res.json();
+          if (data.isLiveServer !== false && Array.isArray(data.leaderboard) && data.leaderboard.length > 0) {
+            list = data.leaderboard;
+            isLiveServerConnected = true;
+          }
         }
-      } catch (err) {
-        console.warn('API error, using local storage mode:', err);
+      } catch (err) {}
+
+      if (!list) {
+        // Direct Upstash REST API Fallback
+        const upstashList = await directUpstashFetchLeaderboard();
+        if (upstashList && Array.isArray(upstashList) && upstashList.length > 0) {
+          list = upstashList;
+          isLiveServerConnected = true;
+        }
+      }
+
+      if (list && list.length > 0) {
+        // Merge with default mock entries for full podium
+        const existingNames = new Set(list.map(p => p.name));
+        const merged = [...list];
+        for (const def of localList) {
+          if (!existingNames.has(def.name)) {
+            merged.push(def);
+          }
+        }
+        list = merged;
+      } else {
+        list = localList;
         isLiveServerConnected = false;
       }
 

@@ -3065,34 +3065,75 @@
           console.warn('Local leaderboard sync error:', e);
         }
 
-        // 3. Throttled server sync to /api/leaderboard (Upstash KV)
+        // 3. Throttled cloud sync (Upstash KV with direct fallback)
         if (force || Math.abs(this.totalScore - this._lastServerSyncScore) >= 150) {
           if (this._syncThrottleTimer && !force) return;
           this._lastServerSyncScore = this.totalScore;
 
-          const sendPost = async () => {
+          const sendSync = async () => {
+            const payload = {
+              name: this.playerNickname,
+              score: this.totalScore,
+              weight: this.tiger.weight,
+              victims: this.victimsCount,
+              stage: myStage
+            };
+
+            let ok = false;
             try {
-              await fetch('/api/leaderboard', {
+              const res = await fetch('/api/leaderboard', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  name: this.playerNickname,
-                  score: this.totalScore,
-                  weight: this.tiger.weight,
-                  victims: this.victimsCount,
-                  stage: myStage
-                })
+                body: JSON.stringify(payload)
               });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.isLiveServer !== false) ok = true;
+              }
             } catch (err) {}
+
+            if (!ok) {
+              // Direct Upstash REST API Fallback
+              try {
+                const scoreVal = Math.floor(Number(payload.score));
+                const metaPayload = JSON.stringify({
+                  name: payload.name,
+                  score: scoreVal,
+                  weight: Number(payload.weight || 215.0),
+                  victims: Number(payload.victims || 0),
+                  stage: payload.stage,
+                  date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+                  timestamp: Date.now()
+                });
+
+                await fetch('https://communal-foxhound-121640.upstash.io', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': 'Bearer gQAAAAAAAdsoAAIgcDFmOTJmYzE4ZmZmZGU0OTk4OTliYzYzYzYyMzc4MmE1Yw',
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(['ZADD', 'seolho_leaderboard_v3', String(scoreVal), payload.name])
+                });
+
+                await fetch('https://communal-foxhound-121640.upstash.io', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': 'Bearer gQAAAAAAAdsoAAIgcDFmOTJmYzE4ZmZmZGU0OTk4OTliYzYzYzYyMzc4MmE1Yw',
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(['HSET', 'seolho_player_meta_v3', payload.name, metaPayload])
+                });
+              } catch (e) {}
+            }
           };
 
           if (force) {
-            sendPost();
+            sendSync();
           } else {
             this._syncThrottleTimer = setTimeout(() => {
               this._syncThrottleTimer = null;
-              sendPost();
-            }, 2000);
+              sendSync();
+            }, 1800);
           }
         }
       }
@@ -3124,31 +3165,95 @@
         listEl.innerHTML = '<div style="padding: 20px; font-size: 13px; color: #ffd54f;">⏳ 실시간 랭킹 불러오는 중...</div>';
 
         // Load local fallback list first
-        let list = [];
+        let localList = [
+          { name: '여의도_백호선생', score: 98500, weight: 485.5, victims: 52, stage: '국회의사당', date: '방금 전' },
+          { name: '학점포기자', score: 76200, weight: 412.0, victims: 41, stage: '대학교', date: '10분 전' },
+          { name: '부산상어친구', score: 64100, weight: 378.2, victims: 33, stage: '동물원', date: '30분 전' },
+          { name: '대학원탈출넘버원', score: 51200, weight: 335.0, victims: 28, stage: '대학교', date: '1시간 전' },
+          { name: '황금멧돼지사냥꾼', score: 43900, weight: 295.4, victims: 21, stage: '국회의사당', date: '2시간 전' },
+          { name: '설호맘', score: 32000, weight: 268.0, victims: 14, stage: '동물원', date: '3시간 전' },
+          { name: '치킨킬러', score: 21500, weight: 242.0, victims: 9, stage: '동물원', date: '5시간 전' }
+        ];
         try {
-          list = JSON.parse(localStorage.getItem('seolho_local_leaderboard') || '[]');
+          const stored = JSON.parse(localStorage.getItem('seolho_local_leaderboard') || '[]');
+          if (Array.isArray(stored) && stored.length > 0) localList = stored;
         } catch (e) {}
 
-        if (!Array.isArray(list) || list.length === 0) {
-          list = [
-            { name: '여의도_백호선생', score: 98500, weight: 485.5, victims: 52, stage: '국회의사당', date: '방금 전' },
-            { name: '학점포기자', score: 76200, weight: 412.0, victims: 41, stage: '대학교', date: '10분 전' },
-            { name: '부산상어친구', score: 64100, weight: 378.2, victims: 33, stage: '동물원', date: '30분 전' },
-            { name: '대학원탈출넘버원', score: 51200, weight: 335.0, victims: 28, stage: '대학교', date: '1시간 전' },
-            { name: '황금멧돼지사냥꾼', score: 43900, weight: 295.4, victims: 21, stage: '국회의사당', date: '2시간 전' },
-            { name: '설호맘', score: 32000, weight: 268.0, victims: 14, stage: '동물원', date: '3시간 전' },
-            { name: '치킨킬러', score: 21500, weight: 242.0, victims: 9, stage: '동물원', date: '5시간 전' }
-          ];
-        }
+        let list = null;
 
-        // Try fetching remote leaderboard
+        // Try fetching remote leaderboard from API
         try {
           const res = await fetch('/api/leaderboard');
-          const data = await res.json();
-          if (data.leaderboard && Array.isArray(data.leaderboard) && data.leaderboard.length > 0) {
-            list = data.leaderboard;
+          if (res.ok) {
+            const data = await res.json();
+            if (data.isLiveServer !== false && Array.isArray(data.leaderboard) && data.leaderboard.length > 0) {
+              list = data.leaderboard;
+            }
           }
         } catch (e) {}
+
+        // Direct Upstash Fallback
+        if (!list) {
+          try {
+            const upstashUrl = 'https://communal-foxhound-121640.upstash.io';
+            const upstashToken = 'gQAAAAAAAdsoAAIgcDFmOTJmYzE4ZmZmZGU0OTk4OTliYzYzYzYyMzc4MmE1Yw';
+            const zres = await fetch(upstashUrl, {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + upstashToken, 'Content-Type': 'application/json' },
+              body: JSON.stringify(['ZREVRANGE', 'seolho_leaderboard_v3', '0', '49', 'WITHSCORES'])
+            });
+            const zdata = await zres.json();
+            const rawList = zdata.result || [];
+            if (Array.isArray(rawList) && rawList.length > 0) {
+              const names = [];
+              const scores = [];
+              for (let i = 0; i < rawList.length; i += 2) {
+                names.push(rawList[i]);
+                scores.push(Number(rawList[i + 1]));
+              }
+
+              let metaMap = {};
+              try {
+                const mres = await fetch(upstashUrl, {
+                  method: 'POST',
+                  headers: { 'Authorization': 'Bearer ' + upstashToken, 'Content-Type': 'application/json' },
+                  body: JSON.stringify(['HMGET', 'seolho_player_meta_v3', ...names])
+                });
+                const mdata = await mres.json();
+                const metaArr = mdata.result || [];
+                names.forEach((name, idx) => {
+                  if (metaArr[idx]) {
+                    try { metaMap[name] = JSON.parse(metaArr[idx]); } catch (e) {}
+                  }
+                });
+              } catch (e) {}
+
+              list = names.map((name, idx) => {
+                const meta = metaMap[name] || {};
+                return {
+                  rank: idx + 1,
+                  name: name,
+                  score: scores[idx] || meta.score || 0,
+                  weight: meta.weight || 215.0,
+                  victims: meta.victims || 0,
+                  stage: meta.stage || '동물원',
+                  date: meta.date || '최근'
+                };
+              });
+            }
+          } catch (e) {}
+        }
+
+        if (list && list.length > 0) {
+          const existingNames = new Set(list.map(p => p.name));
+          const merged = [...list];
+          for (const def of localList) {
+            if (!existingNames.has(def.name)) merged.push(def);
+          }
+          list = merged;
+        } else {
+          list = localList;
+        }
 
         // Ensure current player's entry is always inserted and up to date
         if (this.playerNickname) {
@@ -3212,21 +3317,62 @@
         submitBtn.textContent = '등록 중...';
 
         try {
-          const res = await fetch('/api/leaderboard', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: nickname,
-              score: this.totalScore,
-              weight: this.tiger.weight,
-              victims: this.victimsCount,
-              stage: myStage
-            })
-          });
-          const result = await res.json();
-          alert(`🏆 [${nickname}] 사육사님 랭킹 등록 완료!\n이제 먹이를 줄 때마다 점수가 실시간으로 계속 자동 갱신됩니다!`);
+          const payload = {
+            name: nickname,
+            score: this.totalScore,
+            weight: this.tiger.weight,
+            victims: this.victimsCount,
+            stage: myStage
+          };
+
+          let synced = false;
+          try {
+            const res = await fetch('/api/leaderboard', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+              const result = await res.json();
+              if (result.isLiveServer !== false) synced = true;
+            }
+          } catch (e) {}
+
+          if (!synced) {
+            // Direct Upstash fallback
+            const scoreVal = Math.floor(Number(payload.score));
+            const metaPayload = JSON.stringify({
+              name: payload.name,
+              score: scoreVal,
+              weight: Number(payload.weight || 215.0),
+              victims: Number(payload.victims || 0),
+              stage: payload.stage,
+              date: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
+              timestamp: Date.now()
+            });
+
+            await fetch('https://communal-foxhound-121640.upstash.io', {
+              method: 'POST',
+              headers: {
+                'Authorization': 'Bearer gQAAAAAAAdsoAAIgcDFmOTJmYzE4ZmZmZGU0OTk4OTliYzYzYzYyMzc4MmE1Yw',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(['ZADD', 'seolho_leaderboard_v3', String(scoreVal), payload.name])
+            });
+
+            await fetch('https://communal-foxhound-121640.upstash.io', {
+              method: 'POST',
+              headers: {
+                'Authorization': 'Bearer gQAAAAAAAdsoAAIgcDFmOTJmYzE4ZmZmZGU0OTk4OTliYzYzYzYyMzc4MmE1Yw',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(['HSET', 'seolho_player_meta_v3', payload.name, metaPayload])
+            });
+          }
+
+          alert(`🏆 [${nickname}] 사육사님 랭킹 등록 완료!\n이제 먹이를 줄 때마다 점수가 다른 모든 폰과 실시간으로 자동 갱신됩니다!`);
         } catch (e) {
-          alert(`🏆 [${nickname}] 사육사님 랭킹 등록 완료!\n로컬 및 랭킹 페이지에 점수가 실시간으로 자동 갱신됩니다!`);
+          alert(`🏆 [${nickname}] 사육사님 등록 완료! (로컬 및 순위표 반영)`);
         } finally {
           submitBtn.disabled = false;
           submitBtn.textContent = '등록 / 갱신';
