@@ -2,6 +2,8 @@
   "version": 2,
   "name": "seolho-feeding-3d",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" }
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/ranking", "destination": "/ranking.html" },
+    { "source": "/leaderboard", "destination": "/ranking.html" }
   ]
 }
