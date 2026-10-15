@@ -400,6 +400,123 @@
       font-size: 14px;
     }
 
+    /* My Rank Status Card */
+    .my-rank-card {
+      background: linear-gradient(135deg, rgba(255, 152, 0, 0.18), rgba(22, 28, 44, 0.95));
+      border: 2px solid rgba(255, 179, 0, 0.65);
+      border-radius: 20px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 10px 30px rgba(255, 152, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .my-rank-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .my-rank-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .my-rank-highlight {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: #ffd700;
+      text-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+    }
+
+    .my-rank-stats {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .my-rank-chip {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 5px 12px;
+      font-size: 13px;
+      color: #eceff1;
+    }
+
+    .my-rank-chip b {
+      color: #4dd0e1;
+    }
+
+    .live-sync-badge {
+      font-size: 11px;
+      color: #69f0ae;
+      background: rgba(105, 240, 174, 0.15);
+      border: 1px solid #69f0ae;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .my-rank-form {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .my-rank-input {
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      color: #fff;
+      padding: 8px 14px;
+      font-size: 14px;
+      outline: none;
+      min-width: 220px;
+    }
+
+    .my-rank-input:focus {
+      border-color: #ff9800;
+      box-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
+    }
+
+    .btn-rank-action {
+      background: linear-gradient(135deg, #ff9800, #ff5722);
+      border: none;
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: 13px;
+      padding: 8px 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-rank-action:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(255, 87, 34, 0.6);
+    }
+
+    .rank-row.my-row {
+      background: rgba(255, 215, 0, 0.16) !important;
+      border: 2px solid #ffd700 !important;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3) !important;
+    }
+
     /* Footer Info */
     .footer-info {
       text-align: center;
@@ -466,6 +583,11 @@
       <p class="header-subtitle">전국 최고의 호랑이 사육사들의 실시간 랭킹 순위표</p>
     </div>
 
+    <!-- My Live Rank Card (Interactive Nickname & Score) -->
+    <div class="my-rank-card" id="my-rank-card">
+      <div style="font-size: 13px; color: #ffd54f;">내 사육사 랭킹 상태를 불러오는 중...</div>
+    </div>
+
     <!-- Top 3 Podium -->
     <div class="podium-container" id="podium-container">
       <!-- Injected via JS -->
@@ -511,36 +633,270 @@
     let allRankings = [];
     let currentFilter = 'all';
     let searchQuery = '';
+    let playerNickname = localStorage.getItem('seolho_player_nickname') || '';
 
     // Elements
+    const myRankCardEl = document.getElementById('my-rank-card');
     const podiumEl = document.getElementById('podium-container');
     const rowsListEl = document.getElementById('rank-rows-list');
     const refreshBtn = document.getElementById('btn-refresh-list');
     const searchInput = document.getElementById('search-input');
 
-    // Fetch Leaderboard from /api/leaderboard
+    // Helper: read latest local stats from seolho_save_v2 and seolho_my_rank_entry
+    function getMyLocalStats() {
+      let score = 0;
+      let weight = 215.0;
+      let victims = 0;
+      let stage = '동물원';
+
+      try {
+        const myEntry = JSON.parse(localStorage.getItem('seolho_my_rank_entry') || 'null');
+        if (myEntry) {
+          score = Number(myEntry.score) || 0;
+          weight = Number(myEntry.weight) || 215.0;
+          victims = Number(myEntry.victims) || 0;
+          stage = myEntry.stage || '동물원';
+        }
+      } catch (e) {}
+
+      try {
+        const gameSave = JSON.parse(localStorage.getItem('seolho_save_v2') || 'null');
+        if (gameSave) {
+          if (typeof gameSave.totalScore === 'number') score = Math.max(score, gameSave.totalScore);
+          if (typeof gameSave.weight === 'number') weight = gameSave.weight;
+          if (typeof gameSave.victimsCount === 'number') victims = Math.max(victims, gameSave.victimsCount);
+          const stageMap = { zoo: '동물원', assembly: '국회의사당', university: '대학교' };
+          if (gameSave.currentStage && stageMap[gameSave.currentStage]) {
+            stage = stageMap[gameSave.currentStage];
+          }
+        }
+      } catch (e) {}
+
+      return { score, weight, victims, stage };
+    }
+
+    // Render My Rank Status Card
+    function renderMyRankCard() {
+      const stats = getMyLocalStats();
+      playerNickname = localStorage.getItem('seolho_player_nickname') || '';
+
+      if (playerNickname) {
+        // Find player's position in allRankings
+        const foundIdx = allRankings.findIndex(r => r.name === playerNickname);
+        const myRank = foundIdx >= 0 ? allRankings[foundIdx].rank : (allRankings.length + 1);
+        const myScore = foundIdx >= 0 ? allRankings[foundIdx].score : stats.score;
+        const myWeight = foundIdx >= 0 && allRankings[foundIdx].weight ? allRankings[foundIdx].weight : stats.weight;
+        const myVictims = foundIdx >= 0 && allRankings[foundIdx].victims ? allRankings[foundIdx].victims : stats.victims;
+        const myStage = foundIdx >= 0 && allRankings[foundIdx].stage ? allRankings[foundIdx].stage : stats.stage;
+
+        myRankCardEl.innerHTML = `
+          <div class="my-rank-header">
+            <div class="my-rank-title">
+              <span>👤 사육사:</span>
+              <span style="color: #ffd54f; font-weight: 800;">${playerNickname}</span>
+              <span class="live-sync-badge">🟢 점수 실시간 연동 중</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn-rank-action" id="btn-toggle-edit" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);">✏️ 닉네임 변경</button>
+            </div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div class="my-rank-title">
+              <span>현재 내 실시간 순위:</span>
+              <span class="my-rank-highlight">🏆 ${myRank}위</span>
+            </div>
+            <div class="my-rank-stats">
+              <span class="my-rank-chip">🎯 <b>${Number(myScore).toLocaleString()}점</b></span>
+              <span class="my-rank-chip">🐯 <b>${Number(myWeight).toFixed(1)}kg</b></span>
+              <span class="my-rank-chip">😱 <b>${myVictims}명</b></span>
+              <span class="my-rank-chip">📍 <b>${myStage}</b></span>
+            </div>
+          </div>
+
+          <!-- Edit Form (Hidden by default) -->
+          <div class="my-rank-form" id="edit-nick-form" style="display: none; margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <span style="font-size: 13px; color: #cfd8dc;">새 닉네임:</span>
+            <input type="text" id="edit-nick-input" class="my-rank-input" value="${playerNickname}" maxlength="10">
+            <button class="btn-rank-action" id="btn-save-nick">저장 및 랭킹 갱신</button>
+            <button class="btn-rank-action" id="btn-cancel-edit" style="background: rgba(255,255,255,0.15);">취소</button>
+          </div>
+        `;
+
+        document.getElementById('btn-toggle-edit').addEventListener('click', () => {
+          const form = document.getElementById('edit-nick-form');
+          form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+          if (form.style.display === 'flex') document.getElementById('edit-nick-input').focus();
+        });
+
+        document.getElementById('btn-cancel-edit').addEventListener('click', () => {
+          document.getElementById('edit-nick-form').style.display = 'none';
+        });
+
+        document.getElementById('btn-save-nick').addEventListener('click', () => {
+          const input = document.getElementById('edit-nick-input');
+          handleNicknameUpdate(input.value);
+        });
+
+        document.getElementById('edit-nick-input').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            const input = document.getElementById('edit-nick-input');
+            handleNicknameUpdate(input.value);
+          }
+        });
+
+      } else {
+        // Not registered yet
+        myRankCardEl.innerHTML = `
+          <div class="my-rank-header">
+            <div class="my-rank-title">
+              <span>🐯 아직 순위표에 닉네임이 등록되지 않았습니다!</span>
+            </div>
+            <span style="font-size: 12px; color: #ffd54f;">현재 내 게임 기록: ${stats.score.toLocaleString()}점 • ${stats.weight.toFixed(1)}kg</span>
+          </div>
+          <p style="font-size: 13px; color: #cfd8dc; line-height: 1.5;">
+            사육사 닉네임을 1회 등록하면, 게임을 플레이할 때마다 점수가 실시간 순위표에 계속 자동 갱신됩니다!
+          </p>
+          <div class="my-rank-form" style="margin-top: 4px;">
+            <input type="text" id="reg-nick-input" class="my-rank-input" placeholder="사육사 닉네임 입력 (최대 10자)" maxlength="10">
+            <button class="btn-rank-action" id="btn-submit-reg">🏆 내 점수 랭킹에 등록하기</button>
+          </div>
+        `;
+
+        document.getElementById('btn-submit-reg').addEventListener('click', () => {
+          const input = document.getElementById('reg-nick-input');
+          handleNicknameUpdate(input.value);
+        });
+
+        document.getElementById('reg-nick-input').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            const input = document.getElementById('reg-nick-input');
+            handleNicknameUpdate(input.value);
+          }
+        });
+      }
+    }
+
+    // Handle Nickname Registration or Update
+    async function handleNicknameUpdate(newNick) {
+      const cleanNick = (newNick || '').trim();
+      if (!cleanNick) {
+        alert('닉네임을 입력해주세요!');
+        return;
+      }
+
+      playerNickname = cleanNick;
+      localStorage.setItem('seolho_player_nickname', cleanNick);
+
+      const stats = getMyLocalStats();
+      const myEntry = {
+        name: cleanNick,
+        score: stats.score,
+        weight: stats.weight,
+        victims: stats.victims,
+        stage: stats.stage,
+        date: '방금 전',
+        timestamp: Date.now()
+      };
+      localStorage.setItem('seolho_my_rank_entry', JSON.stringify(myEntry));
+
+      // Try sending to server
+      try {
+        await fetch('/api/leaderboard', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: cleanNick,
+            score: stats.score,
+            weight: stats.weight,
+            victims: stats.victims,
+            stage: stats.stage
+          })
+        });
+      } catch (e) {}
+
+      alert(`🎉 [${cleanNick}] 사육사님 등록 완료!\n이제 게임에서 먹이를 줄 때마다 점수가 계속 자동으로 업데이트됩니다!`);
+      confetti({ particleCount: 100, spread: 80 });
+
+      fetchLeaderboard();
+    }
+
+    // Fetch Leaderboard with Guaranteed Local & Remote Merging
     async function fetchLeaderboard() {
       rowsListEl.innerHTML = '<div class="empty-state">실시간 순위표를 불러오는 중입니다...</div>';
 
+      // 1. Load local base rankings
+      let localList = [];
+      try {
+        localList = JSON.parse(localStorage.getItem('seolho_local_leaderboard') || '[]');
+      } catch (e) {}
+
+      if (!Array.isArray(localList) || localList.length === 0) {
+        localList = [
+          { name: '여의도_백호선생', score: 98500, weight: 485.5, victims: 52, stage: '국회의사당', date: '방금 전' },
+          { name: '학점포기자', score: 76200, weight: 412.0, victims: 41, stage: '대학교', date: '10분 전' },
+          { name: '부산상어친구', score: 64100, weight: 378.2, victims: 33, stage: '동물원', date: '30분 전' },
+          { name: '대학원탈출넘버원', score: 51200, weight: 335.0, victims: 28, stage: '대학교', date: '1시간 전' },
+          { name: '황금멧돼지사냥꾼', score: 43900, weight: 295.4, victims: 21, stage: '국회의사당', date: '2시간 전' },
+          { name: '설호맘', score: 32000, weight: 268.0, victims: 14, stage: '동물원', date: '3시간 전' },
+          { name: '치킨킬러', score: 21500, weight: 242.0, victims: 9, stage: '동물원', date: '5시간 전' }
+        ];
+      }
+
+      const stats = getMyLocalStats();
+      playerNickname = localStorage.getItem('seolho_player_nickname') || '';
+
+      // 2. Fetch remote leaderboard if available
+      let list = localList;
       try {
         const res = await fetch('/api/leaderboard');
         const data = await res.json();
-        allRankings = data.leaderboard || [];
-        renderAll();
+        if (data.leaderboard && Array.isArray(data.leaderboard) && data.leaderboard.length > 0) {
+          list = data.leaderboard;
+        }
       } catch (err) {
-        console.warn('API error, using fallback:', err);
-        // Fallback demo data
-        allRankings = [
-          { rank: 1, name: '여의도_백호선생', score: 98500, weight: 485.5, victims: 52, stage: '국회의사당', date: '방금 전' },
-          { rank: 2, name: '학점포기자', score: 76200, weight: 412.0, victims: 41, stage: '대학교', date: '10분 전' },
-          { rank: 3, name: '부산상어친구', score: 64100, weight: 378.2, victims: 33, stage: '동물원', date: '30분 전' },
-          { rank: 4, name: '대학원탈출넘버원', score: 51200, weight: 335.0, victims: 28, stage: '대학교', date: '1시간 전' },
-          { rank: 5, name: '황금멧돼지사냥꾼', score: 43900, weight: 295.4, victims: 21, stage: '국회의사당', date: '2시간 전' },
-          { rank: 6, name: '설호맘', score: 32000, weight: 268.0, victims: 14, stage: '동물원', date: '3시간 전' },
-          { rank: 7, name: '치킨킬러', score: 21500, weight: 242.0, victims: 9, stage: '동물원', date: '5시간 전' }
-        ];
-        renderAll();
+        console.warn('API error, using local storage mode:', err);
       }
+
+      // 3. Guarantee that player's nickname is present and has the up-to-date score
+      if (playerNickname) {
+        const myIdx = list.findIndex(item => item.name === playerNickname);
+        const bestScore = Math.max(myIdx >= 0 ? (list[myIdx].score || 0) : 0, stats.score);
+        const myEntry = {
+          name: playerNickname,
+          score: bestScore,
+          weight: stats.weight,
+          victims: stats.victims,
+          stage: stats.stage,
+          date: '방금 전'
+        };
+
+        if (myIdx >= 0) {
+          list[myIdx] = { ...list[myIdx], ...myEntry };
+        } else {
+          list.push(myEntry);
+        }
+      }
+
+      // 4. Sort strictly descending by score
+      list.sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0));
+
+      // 5. Assign exact rank numbers 1, 2, 3...
+      allRankings = list.map((item, idx) => ({
+        ...item,
+        rank: idx + 1,
+        score: Number(item.score) || 0,
+        weight: Number(item.weight) || 215.0,
+        victims: Number(item.victims) || 0
+      }));
+
+      // Cache back to local storage
+      try {
+        localStorage.setItem('seolho_local_leaderboard', JSON.stringify(allRankings));
+      } catch (e) {}
+
+      renderMyRankCard();
+      renderAll();
     }
 
     // Filter & Search Logic
@@ -567,10 +923,11 @@
 
       // 2nd Place (Left)
       if (second) {
+        const isMe2 = playerNickname && second.name === playerNickname;
         html += `
-          <div class="podium-card second">
+          <div class="podium-card second" style="${isMe2 ? 'border: 2px solid #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);' : ''}">
             <div class="podium-medal">🥈</div>
-            <div class="podium-name">${second.name}</div>
+            <div class="podium-name">${second.name} ${isMe2 ? '<span style="font-size: 11px; color: #ffd700;">(나)</span>' : ''}</div>
             <div class="podium-score">${Number(second.score).toLocaleString()}점</div>
             <div class="podium-meta">
               <span>🐯 ${Number(second.weight || 215).toFixed(1)}kg</span>
@@ -586,10 +943,11 @@
 
       // 1st Place (Center)
       if (first) {
+        const isMe1 = playerNickname && first.name === playerNickname;
         html += `
-          <div class="podium-card first">
+          <div class="podium-card first" style="${isMe1 ? 'border: 3px solid #ffea00; box-shadow: 0 0 30px rgba(255, 234, 0, 0.6);' : ''}">
             <div class="podium-medal">👑🥇</div>
-            <div class="podium-name" style="font-size: 18px; color: #ffd700;">${first.name}</div>
+            <div class="podium-name" style="font-size: 18px; color: #ffd700;">${first.name} ${isMe1 ? '<span style="font-size: 13px; color: #fff; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 6px;">(나)</span>' : ''}</div>
             <div class="podium-score">${Number(first.score).toLocaleString()}점</div>
             <div class="podium-meta">
               <span>🐯 ${Number(first.weight || 215).toFixed(1)}kg</span>
@@ -603,10 +961,11 @@
 
       // 3rd Place (Right)
       if (third) {
+        const isMe3 = playerNickname && third.name === playerNickname;
         html += `
-          <div class="podium-card third">
+          <div class="podium-card third" style="${isMe3 ? 'border: 2px solid #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);' : ''}">
             <div class="podium-medal">🥉</div>
-            <div class="podium-name">${third.name}</div>
+            <div class="podium-name">${third.name} ${isMe3 ? '<span style="font-size: 11px; color: #ffd700;">(나)</span>' : ''}</div>
             <div class="podium-score">${Number(third.score).toLocaleString()}점</div>
             <div class="podium-meta">
               <span>🐯 ${Number(third.weight || 215).toFixed(1)}kg</span>
@@ -630,8 +989,9 @@
         return;
       }
 
-      rowsListEl.innerHTML = list.map((item, idx) => {
-        const rank = idx + 1;
+      rowsListEl.innerHTML = list.map((item) => {
+        const rank = item.rank;
+        const isMe = playerNickname && item.name === playerNickname;
         let medal = rank;
         let rankClass = '';
         if (rank === 1) { medal = '🥇'; rankClass = 'rank-1'; }
@@ -639,10 +999,11 @@
         else if (rank === 3) { medal = '🥉'; rankClass = 'rank-3'; }
 
         return `
-          <div class="rank-row">
+          <div class="rank-row ${isMe ? 'my-row' : ''}">
             <div class="col-rank ${rankClass}">${medal}</div>
             <div class="col-name">
               <span>${item.name}</span>
+              ${isMe ? '<b style="color: #ffd700; font-size: 11px; margin-left: 6px; background: rgba(0,0,0,0.5); padding: 2px 7px; border-radius: 8px;">👤 나</b>' : ''}
               <span class="stage-badge-pill">${item.stage || '동물원'}</span>
             </div>
             <div class="col-score">${Number(item.score).toLocaleString()}점</div>
